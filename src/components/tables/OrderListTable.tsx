@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Pagination from './Pagination';
 import ComponentCard from '@/components/common/ComponentCard';
 import Button from '@/components/ui/button/Button';
 import { CheckLineIcon, CloseLineIcon, EyeIcon } from '@/icons';
 import CustomAlert from '../CustomAlert';
-import { getOrders, approveOrder, rejectedOrder } from '@/services/ordersService';
+import { getOrders, approveOrder, rejectedOrder, getOrderTracking } from '@/services/ordersService';
 import { Modal } from '../ui/modal';
 import AddressPicker from '@/hooks/AddressPicker';
 import { getUsers, User } from '@/services/usersService'; 
 import { formatRD } from '@/utils/currencyUtils';
+import TripMap from '../TripMap';
+
 
 interface OrderItem {
   productId: string;
@@ -200,36 +202,60 @@ export default function OrdersTable() {
   };
 
   const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isOpen: false }));
+    setAlertConfig((prev: AlertConfig) => ({ ...prev, isOpen: false }));
   };
+
+  const [orderTracking, setOrderTracking] = useState<any>(null);
+  const trackingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchOrderTrackingData = useCallback(async (orderId: string) => {
+    try {
+      const response = await getOrderTracking(orderId);
+      if (response?.success && response?.tracking) {
+        setOrderTracking(response.tracking);
+      }
+    } catch (e) {
+      console.log("Error fetching order tracking:", e);
+    }
+  }, []);
 
   const handleViewDetails = (order: ServiceOrder) => {
     setSelectedOrder(order);
     setIsDetailModalOpen(true);
     setIsEditingDetails(false); 
     setEditedDeliveryType(order.deliveryType || "");
+    setOrderTracking(null);
 
-    const initialEditedDeliveries = (order.deliveries || []).map(delivery => {
+    // Cargar trayecto y rastreo de la orden
+    fetchOrderTrackingData(order.id);
+
+    // Intervalo de actualización en tiempo real cada 8 segundos
+    if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
+    trackingIntervalRef.current = setInterval(() => {
+      fetchOrderTrackingData(order.id);
+    }, 8000);
+
+    const initialEditedDeliveries = (order.deliveries || []).map((delivery: OrderDelivery) => {
         let userForThisDelivery = null;
         let availableAddresses: Address[] = [];
-        const deliveryUserUid = delivery.address.userUid || order.userId;
+        const deliveryUserUid = delivery?.address?.userUid || order.userId;
 
-        userForThisDelivery = users.find(u => u.uid === deliveryUserUid);
+        userForThisDelivery = users.find((u: User) => u.uid === deliveryUserUid);
 
         if (userForThisDelivery) {
             availableAddresses = userForThisDelivery.addresses || [];
-        } else if (delivery.address.userUid) {
+        } else if (delivery?.address?.userUid) {
             availableAddresses = [delivery.address];
         } else {
-            userForThisDelivery = users.find(u => u.uid === order.userId);
+            userForThisDelivery = users.find((u: User) => u.uid === order.userId);
             availableAddresses = userForThisDelivery?.addresses || [];
         }
         
         const addressExistsInList = availableAddresses.some(
-          (addr) => addr.placeId === delivery.address.placeId
+          (addr: Address) => addr.placeId === delivery?.address?.placeId
         );
 
-        if (!addressExistsInList && delivery.address.placeId) {
+        if (!addressExistsInList && delivery?.address?.placeId) {
           availableAddresses = [delivery.address, ...availableAddresses];
         }
 
@@ -240,14 +266,19 @@ export default function OrdersTable() {
         };
     });
     setEditedDeliveries(initialEditedDeliveries as EditableDelivery[]);
-};
-
+  };
 
   const closeDetailModal = () => {
+    if (trackingIntervalRef.current) {
+      clearInterval(trackingIntervalRef.current);
+      trackingIntervalRef.current = null;
+    }
+    setOrderTracking(null);
     setIsDetailModalOpen(false);
     setSelectedOrder(null);
     setIsEditingDetails(false);
   };
+
 
   const handleEdit = () => {
     if (!selectedOrder) {
@@ -271,17 +302,17 @@ export default function OrdersTable() {
     setIsEditingDetails(true);
     setEditedDeliveryType(selectedOrder.deliveryType || "");
 
-    const newEditedDeliveries: EditableDelivery[] = selectedOrder.deliveries?.map((delivery) => {
+    const newEditedDeliveries: EditableDelivery[] = selectedOrder.deliveries?.map((delivery: OrderDelivery) => {
         let availableAddresses: Address[] = [];
         let addressWithUserUid = delivery.address;
         
         const deliveryUserUid = delivery.address.userUid || selectedOrder.userId;
-        const userForThisDelivery = users.find(user => user.uid === deliveryUserUid);
+        const userForThisDelivery = users.find((user: User) => user.uid === deliveryUserUid);
 
         if (userForThisDelivery) {
             availableAddresses = userForThisDelivery.addresses || [];
             const addressExistsInList = availableAddresses.some(
-                (addr) => addr.placeId === delivery.address.placeId
+                (addr: Address) => addr.placeId === delivery.address.placeId
             );
             if (!addressExistsInList && delivery.address.placeId) {
                 availableAddresses = [delivery.address, ...availableAddresses];
@@ -309,13 +340,12 @@ export default function OrdersTable() {
     }) || [];
 
     setEditedDeliveries(newEditedDeliveries);
-};
-
+  };
 
   const handleSaveDetails = () => {
     if (!selectedOrder) return;
     const hasEmptyProduct = editedDeliveries.some(
-      (delivery) => !delivery.productId || delivery.productId.length === 0
+      (delivery: EditableDelivery) => !delivery.productId || delivery.productId.length === 0
     );
 
     if (hasEmptyProduct) {
@@ -329,19 +359,19 @@ export default function OrdersTable() {
     
     setLoading(true);
     setTimeout(() => {
-        const updatedOrders = orders.map(order => {
+        const updatedOrders = orders.map((order: ServiceOrder) => {
             if (order.id === selectedOrder.id) {
                 return {
                     ...order,
                     deliveryType: editedDeliveryType,
-                    deliveries: editedDeliveries.map(({ availableAddresses, ...rest }) => rest),
+                    deliveries: editedDeliveries.map(({ availableAddresses, ...rest }: EditableDelivery) => rest),
                 };
             }
             return order;
         });
 
         setOrders(updatedOrders);
-        setSelectedOrder(updatedOrders.find(o => o.id === selectedOrder.id) || null);
+        setSelectedOrder(updatedOrders.find((o: ServiceOrder) => o.id === selectedOrder.id) || null);
         
         setLoading(false);
         setIsEditingDetails(false);
@@ -368,16 +398,16 @@ export default function OrdersTable() {
       unit: "fundas",
       availableAddresses: [],
     };
-    setEditedDeliveries((prev) => [...prev, newDelivery]);
+    setEditedDeliveries((prev: EditableDelivery[]) => [...prev, newDelivery]);
   };
 
   const removeDelivery = (id: string) => {
-    setEditedDeliveries((prev) => prev.filter((delivery) => delivery.id !== id));
+    setEditedDeliveries((prev: EditableDelivery[]) => prev.filter((delivery: EditableDelivery) => delivery.id !== id));
   };
 
   const updateDelivery = (id: string, newValues: Partial<EditableDelivery>) => {
-    setEditedDeliveries((prev) =>
-      prev.map((delivery) =>
+    setEditedDeliveries((prev: EditableDelivery[]) =>
+      prev.map((delivery: EditableDelivery) =>
         delivery.id === id ? {
             ...delivery,
             ...newValues,
@@ -389,12 +419,12 @@ export default function OrdersTable() {
         } : delivery
       )
     );
-};
+  };
   
   const handleUserSelection = (userId: string, deliveryId: string) => {
-    const user = users.find((u) => u.uid === userId);
-    setEditedDeliveries((prev) =>
-      prev.map((delivery) => {
+    const user = users.find((u: User) => u.uid === userId);
+    setEditedDeliveries((prev: EditableDelivery[]) =>
+      prev.map((delivery: EditableDelivery) => {
         if (delivery.id === deliveryId) {
           return {
             ...delivery,
@@ -839,20 +869,67 @@ export default function OrdersTable() {
                       ) : (
                         <div className="space-y-1">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            Producto: {selectedOrder.items.find(i => i.productId === delivery.productId)?.name || 'N/A'}
+                            Producto: {selectedOrder?.items?.find(i => i.productId === delivery.productId)?.name || 'N/A'}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Cantidad: {delivery.quantity} {delivery.unit}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Dirección: {delivery.address.description}
+                            Dirección: {delivery.address?.description || 'No especificada'}
                           </p>
+                          {delivery.address?.additionalInfo && (
+                            <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mt-1">
+                              📍 Referencia: {delivery.address.additionalInfo}
+                            </p>
+                          )}
                         </div>
                       )}
                     </li>
                   ))}
                 </ul>
               </div>
+
+              {/* Mapa de Entrega y Trayecto en Vivo del Pedido */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
+                  Ubicación de Entrega y Trayecto en Vivo
+                </h3>
+
+                {orderTracking?.trip && (
+                  <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-md">
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                      🚚 Viaje Asignado: {orderTracking.trip.tripNumber} ({orderTracking.trip.status === 'started' ? 'En camino' : orderTracking.trip.status})
+                    </p>
+                    {orderTracking.driver && (
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        Conductor: {orderTracking.driver.names || ''} {orderTracking.driver.lastNames || ''} {orderTracking.driver.phone ? `(${orderTracking.driver.phone})` : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <TripMap
+                    driverLocation={
+                      orderTracking?.location
+                        ? { lat: orderTracking.location.latitude, lng: orderTracking.location.longitude }
+                        : null
+                    }
+                    driverInfo={orderTracking?.driver}
+                    deliveries={
+                      selectedOrder?.deliveries?.map((d) => ({
+                        address: d.address,
+                        userId: selectedOrder.userId,
+                        userNames: selectedOrder.userNames,
+                        userLastNames: selectedOrder.userLastNames,
+                        userPhone: '',
+                      })) || []
+                    }
+                    height="320px"
+                  />
+                </div>
+              </div>
+
               {selectedOrder.comments && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Comentarios</h3>
@@ -861,6 +938,7 @@ export default function OrdersTable() {
                   </p>
                 </div>
               )}
+
             </>
           )}
         </div>

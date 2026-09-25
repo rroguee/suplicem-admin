@@ -731,29 +731,29 @@ const TripListTable = () => {
                 )}
               </div>
 
-              {selectedTripDetail.assignedDriverId &&
-                (selectedTripDetail.status === "accepted" || selectedTripDetail.status === "started") && (
-                  <div className="rounded-xl p-5 bg-gray-50 dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">Ubicación actual del camión</h4>
-                    <div className="h-64 rounded-md overflow-hidden shadow-inner">
-                      <TripMap
-                        driverLocation={driverLocation}
-                        driverInfo={selectedTripDetail.driver}
-                        deliveries={
-                          selectedTripDetail.orders?.flatMap(order =>
-                            order.deliveries?.map(delivery => ({
-                              ...delivery,
-                              userId: order.userId,
-                              userNames: order.userNames,
-                              userLastNames: order.userLastNames,
-                              userPhone: order.userPhone,
-                            })) || []
-                          ) || []
-                        }
-                      />
-                    </div>
+              {selectedTripDetail && (
+                <div className="rounded-xl p-5 bg-gray-50 dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700">
+                  <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">Ubicación y Trayecto del Viaje</h4>
+                  <div className="h-64 rounded-md overflow-hidden shadow-inner">
+                    <TripMap
+                      driverLocation={driverLocation}
+                      driverInfo={selectedTripDetail.driver}
+                      deliveries={
+                        selectedTripDetail.orders?.flatMap(order =>
+                          order.deliveries?.map(delivery => ({
+                            ...delivery,
+                            userId: order.userId,
+                            userNames: order.userNames,
+                            userLastNames: order.userLastNames,
+                            userPhone: order.userPhone,
+                          })) || []
+                        ) || []
+                      }
+                    />
                   </div>
-                )}
+                </div>
+              )}
+
             </div>
           </div>
         ) : (

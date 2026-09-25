@@ -26,3 +26,8 @@ export const getOrders = async () => {
     });
     return response.data;
   };
+
+  export const getOrderTracking = async (orderId: string) => {
+    const response = await protectedApi.get(`/orders/${orderId}/tracking`);
+    return response.data;
+  };
