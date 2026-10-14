@@ -8,6 +8,7 @@ export interface User {
   identificationType: string;
   email: string;
   userType: 'client' | 'driver' | 'admin';
+  driverCode?: string;
   addresses: {
     description: string;
     placeId: string;

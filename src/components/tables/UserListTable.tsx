@@ -26,6 +26,7 @@ interface User {
   lastNames: string;
   email: string;
   userType: string; 
+  driverCode?: string;
   identificationType: string;
   identification: string;
   status: 'active' | 'inactive' | 'pending'; 
@@ -327,6 +328,11 @@ const UserListTable = () => {
                           {user.identificationType} - {user.identification}
                         </span>
                       </div>
+                      {user.userType === 'driver' && (
+                        <div className="mt-1.5 inline-flex items-center gap-1 rounded bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                          <span>ID: {user.driverCode || (user.uid ? `COND-${user.uid.slice(0, 5).toUpperCase()}` : 'COND-XXXX')}</span>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-start">
                       <Badge

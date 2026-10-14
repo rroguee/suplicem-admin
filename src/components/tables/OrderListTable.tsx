@@ -56,10 +56,13 @@ interface ServiceOrder {
   comments?: string;
   createdAt: string;
   status: 'approved' | 'pending' | 'cancelled' | string;
+  deliveryAddress?: Address;
   deliveries?: OrderDelivery[];
   tripId?: string;
   userNames: string;
   userLastNames: string;
+  userPhone?: string;
+  userEmail?: string;
   declineReason?: string;
 }
 
@@ -608,13 +611,30 @@ export default function OrdersTable() {
                     className="border-t border-gray-200 dark:border-gray-700"
                   >
                     <td className="px-4 py-3 text-sm">{order.orderNumber}</td>
-                    <td className="px-4 py-3 text-sm">{`${order.userNames} ${order.userLastNames}`}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="font-medium text-gray-900 dark:text-white">{`${order.userNames} ${order.userLastNames}`}</div>
+                      {order.userPhone && (
+                        <a
+                          href={`tel:${order.userPhone}`}
+                          className="text-xs text-blue-600 hover:underline dark:text-blue-400 block mt-0.5"
+                        >
+                          📞 {order.userPhone}
+                        </a>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       {order.items.length > 0
                         ? order.items[0].name + (order.items.length > 1 ? ` (+${order.items.length - 1} más)` : '')
                         : 'N/A'}
                     </td>
-                    <td className="px-4 py-3 text-sm capitalize">{order.deliveryType}</td>
+                    <td className="px-4 py-3 text-sm capitalize">
+                      <div className="font-medium text-gray-900 dark:text-white">{order.deliveryType}</div>
+                      {order.deliveryType === 'domicilio' && (order.deliveryAddress || order.deliveries?.[0]?.address) && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-[180px]" title={(order.deliveryAddress || order.deliveries?.[0]?.address)?.description}>
+                          📍 {(order.deliveryAddress || order.deliveries?.[0]?.address)?.description}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm capitalize">
                       <span
                         className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${statusDisplay.classes}`}
@@ -728,6 +748,29 @@ export default function OrdersTable() {
                   <p className="text-gray-700 dark:text-gray-300">
                     <span className="font-medium">Nombre:</span> {`${selectedOrder.userNames} ${selectedOrder.userLastNames}`}
                   </p>
+                  <p className="mt-1 text-gray-700 dark:text-gray-300">
+                    <span className="font-medium">Teléfono de contacto:</span>{" "}
+                    {selectedOrder.userPhone ? (
+                      <span className="inline-flex items-center gap-2">
+                        <a
+                          href={`tel:${selectedOrder.userPhone}`}
+                          className="text-blue-600 hover:underline font-medium dark:text-blue-400"
+                        >
+                          📞 {selectedOrder.userPhone}
+                        </a>
+                        <a
+                          href={`https://wa.me/${selectedOrder.userPhone.replace(/\D/g, '').length === 10 ? '1' + selectedOrder.userPhone.replace(/\D/g, '') : selectedOrder.userPhone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300"
+                        >
+                          WhatsApp
+                        </a>
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 italic">No disponible</span>
+                    )}
+                  </p>
                   
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Entrega</label>
@@ -744,6 +787,16 @@ export default function OrdersTable() {
                       <p className="text-gray-700 dark:text-gray-300 capitalize">{selectedOrder.deliveryType}</p>
                     )}
                   </div>
+
+                  {selectedOrder.deliveryType === 'domicilio' && (selectedOrder.deliveryAddress || selectedOrder.deliveries?.[0]?.address) && (
+                    <div className="mt-3">
+                      <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Dirección de Entrega:</span>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                        📍 {(selectedOrder.deliveryAddress || selectedOrder.deliveries?.[0]?.address)?.description}
+                        {(selectedOrder.deliveryAddress || selectedOrder.deliveries?.[0]?.address)?.additionalInfo ? ` (${(selectedOrder.deliveryAddress || selectedOrder.deliveries?.[0]?.address)?.additionalInfo})` : ''}
+                      </p>
+                    </div>
+                  )}
 
                   <p className="mt-2 text-gray-700 dark:text-gray-300">
                     <span className="font-medium">Estado:</span>

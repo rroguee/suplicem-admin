@@ -5,9 +5,10 @@ export const getOrders = async () => {
     return response.data;
   };
   
-  export const approveOrder = async (id: string) => {
+  export const approveOrder = async (id: string, driverId?: string) => {
     const response = await protectedApi.patch(`/orders/${id}/status`, {
       status: "approved",
+      driverId: driverId || undefined,
     });
     return response.data;
   };
