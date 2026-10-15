@@ -2,7 +2,7 @@
 import axios from "axios";
 import { getAuthSession, saveAuthSession  } from "./authStorage";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token` : "http://54.211.170.107:3000/api/auth/refresh-token"; // Cámbialo si estás en producción
+const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token` : "https://suplicem-admin.duckdns.org/api/auth/refresh-token"; // Cámbialo si estás en producción
 
 export async function getValidToken(): Promise<string | null> {
   const session = await getAuthSession();
