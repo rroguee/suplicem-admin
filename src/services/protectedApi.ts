@@ -2,7 +2,7 @@ import { getValidToken } from "@/utils/refreshToken";
 import axios from "axios";
 
 const protectedApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://54.211.170.107:3000/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://suplicem-admin.duckdns.org/api",
   timeout: 10000,
 });
 

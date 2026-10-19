@@ -93,7 +93,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     // Simula clearAuthSession eliminando la clave de sesión
     localStorage.removeItem("auth-session"); 
 
-    router.replace("/login"); // Redirige a la página de inicio de sesión
+    router.replace("/signin"); // Redirige a la página de inicio de sesión
   };
 
   // Efecto para cargar el estado de autenticación desde localStorage al montar el componente
