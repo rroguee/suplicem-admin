@@ -13,6 +13,7 @@ import {
   GroupIcon,
   PieChartIcon,
   GridIcon,
+  PlugInIcon,
 } from "../icons/index";
 /*import SidebarWidget from "./SidebarWidget";*/
 
@@ -53,6 +54,13 @@ const navItems: NavItem[] = [
     name: "Gestión de Viajes",
     subItems: [
       { name: "Gestion de Viajes", path: "/admin/transports", pro: false },
+    ],
+  },
+  {
+    icon: <PlugInIcon />,
+    name: "Configuración",
+    subItems: [
+      { name: "Cuentas Bancarias", path: "/admin/settings", pro: false },
     ],
   },
 ];
