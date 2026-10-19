@@ -4,7 +4,7 @@ import { getAuthSession, saveAuthSession  } from "./authStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
   ? `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`
-  : "https://suplicem-admin.duckdns.org/api/auth/refresh-token";
+  : "http://suplicem-admin.duckdns.org/api/auth/refresh-token";
 
 export async function getValidToken(): Promise<string | null> {
   const session = await getAuthSession();
