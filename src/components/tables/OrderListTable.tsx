@@ -12,6 +12,7 @@ import AddressPicker from '@/hooks/AddressPicker';
 import { getUsers, User } from '@/services/usersService'; 
 import { formatRD } from '@/utils/currencyUtils';
 import TripMap from '../TripMap';
+import { calculateTripEstimate, WAREHOUSE_LOCATION } from '@/utils/tripEstimate';
 
 
 interface OrderItem {
@@ -542,8 +543,8 @@ export default function OrdersTable() {
   };
 
   const confirmRejectOrder = async () => {
-    if (!rejectionReason.trim()) {
-      showAlert({ type: 'error', title: 'Error de Validación', message: 'El motivo de rechazo es obligatorio.' });
+    if (rejectionReason.trim().length < 5) {
+      showAlert({ type: 'error', title: 'Error de Validación', message: 'El motivo de rechazo debe tener al menos 5 caracteres.' });
       return;
     }
 
@@ -605,6 +606,14 @@ export default function OrdersTable() {
               {paginatedOrders.map((order) => {
                 const statusDisplay = getStatusDisplay(order.status);
                 const orderTotal = calculateOrderTotal(order.items);
+                const deliveryAddress = order.deliveryAddress || order.deliveries?.[0]?.address;
+                const estimate =
+                  deliveryAddress?.latitude && deliveryAddress?.longitude
+                    ? calculateTripEstimate(WAREHOUSE_LOCATION, {
+                        lat: Number(deliveryAddress.latitude),
+                        lng: Number(deliveryAddress.longitude),
+                      })
+                    : null;
                 return (
                   <tr
                     key={order.id}
@@ -630,9 +639,14 @@ export default function OrdersTable() {
                     <td className="px-4 py-3 text-sm capitalize">
                       <div className="font-medium text-gray-900 dark:text-white">{order.deliveryType}</div>
                       {order.deliveryType === 'domicilio' && (order.deliveryAddress || order.deliveries?.[0]?.address) && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-[180px]" title={(order.deliveryAddress || order.deliveries?.[0]?.address)?.description}>
-                          📍 {(order.deliveryAddress || order.deliveries?.[0]?.address)?.description}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-[180px]" title={deliveryAddress?.description}>
+                          📍 {deliveryAddress?.description}
                         </div>
+                      )}
+                      {estimate && (
+                        <span className="inline-block mt-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                          ⏱️ ~{estimate.durationMinutes} min
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm capitalize">
@@ -715,8 +729,8 @@ export default function OrdersTable() {
             <Button
               size="sm"
               variant="primary"
-              onClick={confirmRejectOrder}
-              disabled={!rejectionReason.trim()}
+               onClick={confirmRejectOrder}
+               disabled={rejectionReason.trim().length < 5}
             >
               Confirmar Rechazo
             </Button>

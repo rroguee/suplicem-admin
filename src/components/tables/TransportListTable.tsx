@@ -20,6 +20,7 @@ import { getAllTrips, getTripDetail, createTrip, getDriverLocation } from '@/ser
 import { getOrdersWithStatus } from '@/services/ordersService';
 import { Modal } from '../ui/modal';
 import TripMap from '../TripMap';
+import { calculateTripEstimate, WAREHOUSE_LOCATION } from '@/utils/tripEstimate';
 
 // --- Interfaces para los datos del viaje ---
 interface OrderItem {
@@ -696,12 +697,25 @@ const TripListTable = () => {
                               <div>
                                 <h5 className="text-sm font-semibold mb-1 text-gray-800 dark:text-white">Direcciones de entrega</h5>
                                 {order.deliveries && order.deliveries.length > 0 ? (
-                                  order.deliveries.map((delivery, deliveryIndex) => (
+                                  order.deliveries.map((delivery, deliveryIndex) => {
+                                    const estimate =
+                                      delivery.address?.latitude && delivery.address?.longitude
+                                        ? calculateTripEstimate(WAREHOUSE_LOCATION, {
+                                            lat: Number(delivery.address.latitude),
+                                            lng: Number(delivery.address.longitude),
+                                          })
+                                        : null;
+                                    return (
                                     <>
                                       <div key={deliveryIndex} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 mb-2">
                                         <MapPin size={16} className="flex-shrink-0 mt-1 text-blue-500" />
                                         <div>
                                           <p>{delivery.address?.description}</p>
+                                          {estimate && (
+                                            <span className="inline-block mt-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                              ⏱️ ~{estimate.durationMinutes} min ({estimate.distanceKm} km)
+                                            </span>
+                                          )}
                                           <p className="text-xs italic text-gray-500">
                                             {delivery.status === 'delivered' ? '✅ Entregado' : 'Pendiente'}
                                           </p>
@@ -715,7 +729,8 @@ const TripListTable = () => {
                                           />
                                       </div>
                                     </>
-                                  ))
+                                    );
+                                  })
                                 ) : (
                                   <p className="text-sm text-gray-500 dark:text-gray-400">No hay direcciones de entrega.</p>
                                 )}

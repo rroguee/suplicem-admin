@@ -7,7 +7,7 @@ export interface User {
   identification: string;
   identificationType: string;
   email: string;
-  userType: 'client' | 'driver' | 'admin';
+  userType: 'client' | 'driver' | 'admin' | 'seller';
   driverCode?: string;
   addresses: {
     description: string;
