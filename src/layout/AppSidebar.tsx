@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useRef, useState,useCallback, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
+import { AuthContext } from "@/context/authContext";
 import {
   TaskIcon,
   BoxIcon,
@@ -78,8 +79,23 @@ const othersItems: NavItem[] = [
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { user } = useContext(AuthContext);
+  const isSeller = user?.userType === "seller";
   const pathname = usePathname();
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
+  // Filtrar opciones restringidas para vendedores
+  const filteredNavItems = navItems.map((item) => {
+    if (item.name === "Usuarios" && isSeller) {
+      return {
+        ...item,
+        subItems: item.subItems?.filter(
+          (sub) => sub.path !== "/admin/user/verifications"
+        ),
+      };
+    }
+    return item;
+  });
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -352,7 +368,7 @@ const AppSidebar: React.FC = () => {
                 </Link>
               </div>
 
-              {renderMenuItems(navItems, "main")}
+              {renderMenuItems(filteredNavItems, "main")}
             </div>
 
             <div className="">

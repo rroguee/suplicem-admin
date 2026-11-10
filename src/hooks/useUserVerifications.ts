@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
+import { useRouter } from 'next/navigation';
+import { AuthContext } from '@/context/authContext';
 import { getUsers, activeOrInactiveUser, User } from '@/services/usersService';
 
 export interface AlertState {
@@ -15,6 +17,16 @@ export interface AlertState {
 export type VerificationTab = 'pending' | 'ai_alerts';
 
 export function useUserVerifications() {
+  const { user } = useContext(AuthContext);
+  const router = useRouter();
+
+  // 🛡️ Proteger pantalla contra acceso no autorizado de vendedores
+  useEffect(() => {
+    if (user?.userType === 'seller') {
+      router.replace('/admin/user');
+    }
+  }, [user, router]);
+
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [aiAlertUsers, setAiAlertUsers] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState<VerificationTab>('pending');
@@ -37,6 +49,7 @@ export function useUserVerifications() {
   };
 
   const fetchRequests = useCallback(async () => {
+    if (user?.userType === 'seller') return;
     setLoading(true);
     try {
       const [pendingRes, aiRes] = await Promise.all([
