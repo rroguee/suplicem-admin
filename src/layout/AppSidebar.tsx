@@ -48,6 +48,7 @@ const navItems: NavItem[] = [
     icon: <GroupIcon />,
     subItems: [
       { name: "Gestión de Usuarios", path: "/admin/user", pro: false },
+      { name: "Verificación de Cédulas", path: "/admin/user/verifications", pro: false },
       /*{ name: "404 Error", path: "/error-404", pro: false },*/
     ],
   },

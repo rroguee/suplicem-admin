@@ -6,14 +6,22 @@ export interface User {
   lastNames: string;
   identification: string;
   identificationType: string;
+  identificationImage?: string;
   email: string;
   userType: 'client' | 'driver' | 'admin' | 'seller';
+  personType?: 'fisica' | 'juridica';
+  companyRnc?: string;
+  companyName?: string;
   driverCode?: string;
   sellerCode?: string;
   sellerId?: string;
   sellerName?: string;
   phone?: string;
-  status?: 'active' | 'inactive' | 'pending';
+  status?: 'active' | 'inactive' | 'pending' | 'rejected' | 'banned';
+  createdAt?: string;
+  aiRiskFlag?: boolean;
+  aiRiskScore?: number;
+  aiRiskReason?: string;
   vehicle?: {
     brand?: string;
     model?: string;
@@ -34,8 +42,14 @@ export interface User {
   }[];
 }
 
-export const getUsers = async () => {
-    const response = await protectedApi.get("/users");
+export interface UserQueryParams {
+  status?: string;
+  userType?: string;
+  aiRiskFlag?: boolean;
+}
+
+export const getUsers = async (params?: UserQueryParams) => {
+    const response = await protectedApi.get("/users", { params });
     return response.data;
   };
   
