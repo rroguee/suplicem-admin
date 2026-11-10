@@ -35,7 +35,7 @@ export const OrderRejectModal: React.FC<OrderRejectModalProps> = ({
         <textarea
           className="w-full p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 mb-3"
           rows={3}
-          placeholder="Motivo de rechazo (obligatorio)"
+          placeholder="Motivo de rechazo (mínimo 5 caracteres)"
           value={reason}
           onChange={(e) => onReasonChange(e.target.value)}
           required
@@ -47,7 +47,7 @@ export const OrderRejectModal: React.FC<OrderRejectModalProps> = ({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={!reason.trim() || loading}
+            disabled={reason.trim().length < 5 || loading}
             className="px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg shadow-xs transition-all"
           >
             Confirmar Rechazo

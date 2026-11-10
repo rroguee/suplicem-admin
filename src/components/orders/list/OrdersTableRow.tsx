@@ -5,6 +5,7 @@ import { Truck, Store, MapPin, Phone, ShieldAlert, FileText } from 'lucide-react
 import { ServiceOrder } from './types';
 import { OrdersRowActions } from './OrdersRowActions';
 import { formatRD } from '@/utils/currencyUtils';
+import { calculateTripEstimate, WAREHOUSE_LOCATION } from '@/utils/tripEstimate';
 
 interface OrdersTableRowProps {
   order: ServiceOrder;
@@ -31,6 +32,13 @@ export const OrdersTableRow: React.FC<OrdersTableRowProps> = ({
   const orderTotal = calculateTotal(order.items);
   const address = order.deliveryAddress || order.deliveries?.[0]?.address;
   const hasReceipt = Boolean(order.receiptUrl || order.transferReceipt);
+  const estimate =
+    address?.latitude && address?.longitude
+      ? calculateTripEstimate(WAREHOUSE_LOCATION, {
+          lat: Number(address.latitude),
+          lng: Number(address.longitude),
+        })
+      : null;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -182,6 +190,12 @@ export const OrdersTableRow: React.FC<OrdersTableRowProps> = ({
             <MapPin className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
             <span className="truncate">{address.description}</span>
           </div>
+        )}
+
+        {estimate && (
+          <span className="inline-block mt-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+            ⏱️ ~{estimate.durationMinutes} min
+          </span>
         )}
       </td>
 
