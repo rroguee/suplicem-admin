@@ -6,6 +6,7 @@ import { AuthContext } from "@/context/authContext";
 import Button from "@/components/ui/button/Button";
 import Pagination from "./Pagination";
 import { PlusIcon, PencilIcon, TrashBinIcon } from "@/icons";
+import { Package } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -121,9 +122,26 @@ const ProductListTable = () => {
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="px-5 py-4 text-start">
-                        <span className="block text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                          {product.name}
-                        </span>
+                        <div className="flex items-center gap-3.5">
+                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 p-1 flex items-center justify-center dark:border-gray-800 dark:bg-gray-800/50">
+                            {product.imageUrl || product.image ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={product.imageUrl || product.image}
+                                alt={product.name}
+                                className="h-full w-full object-contain"
+                              />
+                            ) : (
+                              <Package className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                          <div>
+                            <span className="block text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                              {product.name}
+                            </span>
+                            <span className="text-[11px] text-gray-400">ID: {String(product.id).slice(0, 6)}</span>
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500">
                         <span className="font-medium text-gray-700 dark:text-gray-300">{product.unit}</span>
