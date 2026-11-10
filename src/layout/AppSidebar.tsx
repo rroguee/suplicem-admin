@@ -14,6 +14,8 @@ import {
   PieChartIcon,
   GridIcon,
 } from "../icons/index";
+import { Plus } from "lucide-react";
+import { CreateAssistedOrderModal } from "@/components/orders/CreateAssistedOrderModal";
 /*import SidebarWidget from "./SidebarWidget";*/
 
 type NavItem = {
@@ -63,32 +65,12 @@ const othersItems: NavItem[] = [
     name: "Calendario",
     path: "/admin/calendar",
   },
-  
- /*
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
-  },*/
-  // {
-  //   icon: <PlugInIcon />,
-  //   name: "Atenticacion",
-  //   subItems: [
-  //     { name: "Sign In", path: "/signin", pro: false },
-  //     { name: "Sign Up", path: "/signup", pro: false },
-  //   ],
-  // },
 ];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -344,6 +326,23 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots />
                 )}
               </h2>
+
+              {/* Botón de Acción Rápida: Nuevo Pedido */}
+              <div className="mb-4">
+                <Link
+                  href="/admin/orders/create"
+                  className={`w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold shadow-sm transition py-2.5 ${
+                    !isExpanded && !isHovered ? "px-2" : "px-4"
+                  }`}
+                  title="Nuevo Pedido"
+                >
+                  <Plus className="w-5 h-5 shrink-0" />
+                  {(isExpanded || isHovered || isMobileOpen) && (
+                    <span className="text-sm font-semibold tracking-wide">Nuevo Pedido</span>
+                  )}
+                </Link>
+              </div>
+
               {renderMenuItems(navItems, "main")}
             </div>
 
@@ -367,6 +366,18 @@ const AppSidebar: React.FC = () => {
         </nav>
         {/*isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null*/}
       </div>
+
+      {isOrderModalOpen && (
+        <CreateAssistedOrderModal
+          isOpen={isOrderModalOpen}
+          onClose={() => setIsOrderModalOpen(false)}
+          onOrderCreated={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("order-created"));
+            }
+          }}
+        />
+      )}
     </aside>
   );
 };

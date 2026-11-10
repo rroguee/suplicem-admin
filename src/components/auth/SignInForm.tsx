@@ -85,8 +85,20 @@ export default function SignInForm() {
         console.log("Respuesta usuario:", responseUser);
 
         if (responseUser?.data?.success) {
-          // El AuthContext.logIn se encarga de guardar la sesión y redirigir
-                  const now = Date.now();
+          const authenticatedUser = responseUser.data.user;
+
+          // 🛡️ Regla de Control de Acceso:
+          // El panel web es de uso exclusivo para Administradores y Vendedores
+          if (authenticatedUser?.userType !== "admin" && authenticatedUser?.userType !== "seller") {
+            showAlert({
+              type: 'error',
+              title: 'Acceso Restringido',
+              message: 'Este panel administrativo es exclusivo para Administradores y Vendedores de Suplicem. Si eres cliente o transportista, por favor utiliza la app móvil.',
+            });
+            return;
+          }
+
+          const now = Date.now();
           const newSession = {
             token: responseLogin?.data?.idToken,
             refreshToken: responseLogin?.data?.refreshToken,
@@ -95,15 +107,13 @@ export default function SignInForm() {
 
           saveAuthSession(newSession);
         
-          logIn(responseUser.data.user);
+          logIn(authenticatedUser);
           showAlert({
             type: 'success',
             title: 'Inicio de sesión exitoso',
             message: 'Bienvenido de nuevo.',
           });
-          // La redirección se maneja dentro de logIn, no es necesario aquí.
-          // router.replace("/admin/basic-tables"); // Eliminado
-          router.replace("/admin/basic-tables");
+          router.replace("/admin");
         } else {
           showAlert({
             type: 'error',

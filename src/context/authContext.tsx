@@ -30,7 +30,9 @@ type User = {
   names: string;
   lastNames: string;
   phone: string;
-  userType: "client" | "driver"; // Añadido userType
+  userType: "client" | "driver" | "admin" | "seller";
+  sellerCode?: string;
+  sellerId?: string;
   addresses: Address[]; // Ahora usa la interfaz Address
   vehicle?: VehicleData; // Ahora usa la interfaz VehicleData
 };

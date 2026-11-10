@@ -1,177 +1,78 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Button from '@/components/ui/button/Button';
-import Pagination from './Pagination';
-import { PlusIcon, PencilIcon, TrashBinIcon } from '@/icons';
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import { useRouter } from "next/navigation";
+import { AuthContext } from "@/context/authContext";
+import Button from "@/components/ui/button/Button";
+import Pagination from "./Pagination";
+import { PlusIcon, PencilIcon, TrashBinIcon } from "@/icons";
 import {
   Table,
   TableBody,
   TableCell,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Modal } from '@/components/ui/modal';
-import Label from '@/components/form/Label';
-import Input from '@/components/form/input/InputField';
-import FileInput from '@/components/form/input/FileInput';
-import { useModal } from '@/hooks/useModal';
-import { useConfirmDelete } from '../interactions/useDeleteForm';
-import { formatCurrency } from '../interactions/formatCurrency';
-import { getProducts, createProduct } from '@/services/prodcutsService';
-
+} from "@/components/ui/table";
+import { Modal } from "@/components/ui/modal";
+import { useConfirmDelete } from "../interactions/useDeleteForm";
+import { formatCurrency } from "../interactions/formatCurrency";
+import { getProducts } from "@/services/prodcutsService";
 
 interface Product {
-  id: number;
+  id: string | number;
   name: string;
   unit: string;
-  price: string;
-  image: string;
+  price: number | string;
+  lotSize?: number;
+  lotPrice?: number;
+  lotPrices?: Record<string, number>;
+  image?: string;
+  imageUrl?: string;
 }
 
 const ProductListTable = () => {
+  const router = useRouter();
+  const { user: authUser } = useContext(AuthContext);
+  const isSeller = authUser?.userType === "seller";
+
   const [products, setProducts] = useState<Product[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    price: '',
-    imageUrl: '',
-    unit: '',
-  });
-
   const totalPages = 1;
-  const { isOpen, openModal, closeModal } = useModal();
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const productsResponse = await getProducts();
+      setProducts(productsResponse?.products || []);
+    } catch (error) {
+      console.error("[fetchProducts] Error al obtener productos:", error);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const productsResponse = await getProducts();
-        setProducts(productsResponse?.products || []);
-        console.log('[fetchProducts] Productos cargados:', productsResponse);
-      } catch (error) {
-        console.error('[fetchProducts] Error al obtener productos:', error);
-      }
-    };
-
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const {
     isConfirmOpen,
-    itemToDelete,
     requestDelete,
     confirmDelete,
     cancelDelete,
-    isDeleting,
   } = useConfirmDelete<Product>({ items: products, setItems: setProducts });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const updated = { ...newProduct, [name]: value };
-    console.log('[handleChange] Actualizando campo:', name, 'Valor:', value);
-    setNewProduct(updated);
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      console.log('[handleFileUpload] Imagen seleccionada:', imageUrl);
-      setNewProduct((prev) => ({ ...prev, imageUrl }));
-    }
-  };
-
-  const handleSave = async () => {
-    const { name, price, unit, imageUrl } = newProduct;
-  
-    const productDataToSend = {
-      name,
-      price: Number(price),
-      unit,
-      ...(imageUrl && { imageUrl }), // Solo incluir si existe
-    };
-  
-    console.log('[handleSave] Enviando producto al servicio: ', productDataToSend);
-  
-    try {
-      const response = await createProduct(productDataToSend);
-      console.log('[handleSave] Producto creado exitosamente:', response);
-      closeModal();
-    } catch (error) {
-      console.error('[handleSave] Error al crear producto: ', error);
-    }
-  };
-  
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button
-          size="md"
-          variant="primary"
-          startIcon={<PlusIcon />}
-          onClick={openModal}
-        >
-          Nuevo Producto
-        </Button>
-      </div>
-
-      <Modal
-        isOpen={isOpen}
-        onClose={closeModal}
-        className="max-w-[584px] p-5 lg:p-10"
-      >
-        <form>
-          <h4 className="mb-6 text-lg font-medium text-gray-800 dark:text-white/90">
+      {!isSeller && (
+        <div className="flex justify-end">
+          <Button
+            size="md"
+            variant="primary"
+            startIcon={<PlusIcon />}
+            onClick={() => router.push("/admin/products/form")}
+          >
             Nuevo Producto
-          </h4>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-            <div className="col-span-1">
-              <Label>Nombre</Label>
-              <Input
-                type="text"
-                name="name"
-                placeholder="Nombre del producto"
-                value={newProduct.name}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-span-1">
-              <Label>Unidad</Label>
-              <Input
-                type="text"
-                name="unit"
-                placeholder="Ej. Caja, Paquete"
-                value={newProduct.unit}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-span-1">
-              <Label>Precio</Label>
-              <Input
-                type="text"
-                name="price"
-                placeholder="$00.00"
-                value={newProduct.price}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-span-1 sm:col-span-2">
-              <Label>Imagen del producto</Label>
-              <FileInput onChange={handleFileUpload} />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end w-full gap-3 mt-6">
-            <Button size="sm" variant="outline" onClick={closeModal}>
-              Cancelar
-            </Button>
-            <Button size="sm" onClick={handleSave}>
-              Guardar
-            </Button>
-          </div>
-        </form>
-      </Modal>
+          </Button>
+        </div>
+      )}
 
       <Modal
         isOpen={isConfirmOpen}
@@ -200,56 +101,66 @@ const ProductListTable = () => {
             <Table>
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
-                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 font-medium">
                     Nombre
                   </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 font-medium">
                     Unidad
                   </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
-                    Precio
+                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 font-medium">
+                    Precio Unitario
                   </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
+                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 font-medium">
                     Acciones
                   </TableCell>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="px-5 py-4 text-start">
-                      <span className="block text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                        {product.name}
-                      </span>
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">
-                      {product.unit}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">
-                      {formatCurrency(Number(product.price))}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-start">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          startIcon={<PencilIcon />}
-                          onClick={() => console.log('Editar:', product.id)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          startIcon={<TrashBinIcon />}
-                          onClick={() => requestDelete(product)}
-                        >
-                          Eliminar
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {products.map((product) => {
+                  const unitPrice = Number(product.price) || 0;
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell className="px-5 py-4 text-start">
+                        <span className="block text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                          {product.name}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{product.unit}</span>
+                        {(product as any).weightKg ? (
+                          <span className="block text-xs text-gray-400">{(product as any).weightKg} kg/u</span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500">
+                        {formatCurrency(unitPrice)}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-start">
+                        {isSeller ? (
+                          <span className="text-xs text-gray-400">Solo lectura</span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              startIcon={<PencilIcon />}
+                              onClick={() => router.push(`/admin/products/form?id=${product.id}`)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              startIcon={<TrashBinIcon />}
+                              onClick={() => requestDelete(product)}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

@@ -1,6 +1,10 @@
-import React, { useRef, useState } from "react";
+'use client';
 
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+import React, { useState } from 'react';
+import { useLoadScript } from '@react-google-maps/api';
+
+const libraries: any = ['places'];
+const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 interface AddressPickerProps {
   initialValue?: string;
@@ -12,23 +16,15 @@ interface AddressPickerProps {
   }) => void;
 }
 
-interface Prediction {
-  place_id: string;
-  description: string;
-}
+export default function AddressPicker({ onPlaceSelected, initialValue = '' }: AddressPickerProps) {
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: API_KEY,
+    libraries,
+  });
 
-export default function AddressPicker({ onPlaceSelected, initialValue = "" }: AddressPickerProps) {
   const [query, setQuery] = useState<string>(initialValue);
-  const [results, setResults] = useState<Prediction[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const sessionTokenRef = useRef<string>("");
-
-  const getSessionToken = () => {
-    if (!sessionTokenRef.current) {
-      sessionTokenRef.current = `admin-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    }
-    return sessionTokenRef.current;
-  };
 
   const handleSearch = async (text: string) => {
     setQuery(text);
@@ -37,103 +33,78 @@ export default function AddressPicker({ onPlaceSelected, initialValue = "" }: Ad
       return;
     }
 
-    setLoading(true);
-    try {
-      if (API_KEY && !API_KEY.includes("your_")) {
-        const token = getSessionToken();
-        const googleUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          text
-        )}&components=country:do&language=es&sessiontoken=${token}&key=${API_KEY}`;
-
-        const res = await fetch(googleUrl);
-        const json = await res.json();
-
-        if (json.status === "OK" && json.predictions) {
-          setResults(json.predictions);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Fallback a OpenStreetMap Nominatim si no hay API key de Google configurada
-      const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-        text + ", República Dominicana"
-      )}&format=json&addressdetails=1&limit=5`;
-
-      const nomRes = await fetch(nominatimUrl, {
-        headers: { "Accept-Language": "es" },
-      });
-      if (nomRes.ok) {
-        const nomJson = await nomRes.json();
-        if (Array.isArray(nomJson)) {
-          setResults(
-            nomJson.map((item: any) => ({
-              place_id: `nom-${item.place_id}`,
-              description: item.display_name,
-              lat: parseFloat(item.lat),
-              lng: parseFloat(item.lon),
-            }))
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Error buscando direcciones:", error);
-    }
-    setLoading(false);
-  };
-
-  const handleSelect = async (prediction: any) => {
-    setResults([]);
-    setQuery(prediction.description);
-
-    // Si ya viene con lat/lng de Nominatim
-    if (prediction.lat && prediction.lng) {
-      onPlaceSelected({
-        placeId: prediction.place_id,
-        description: prediction.description,
-        latitude: prediction.lat,
-        longitude: prediction.lng,
-      });
-      sessionTokenRef.current = "";
+    if (!isLoaded || !window.google?.maps?.places) {
       return;
     }
 
+    setLoading(true);
     try {
-      const token = getSessionToken();
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
-          prediction.place_id
-        )}&fields=geometry,formatted_address&language=es&sessiontoken=${token}&key=${API_KEY}`
-      );
-      const json = await res.json();
+      const placesLib = window.google.maps.places as any;
 
-      if (json.status === "OK" && json.result?.geometry?.location) {
-        const loc = json.result.geometry.location;
-        onPlaceSelected({
-          placeId: prediction.place_id,
-          description: json.result.formatted_address || prediction.description,
-          latitude: loc.lat,
-          longitude: loc.lng,
+      if (placesLib.AutocompleteSuggestion?.fetchAutocompleteSuggestions) {
+        const response = await placesLib.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: text,
+          includedRegionCodes: ['do'],
         });
+
+        const mappedSuggestions = (response.suggestions || [])
+          .filter((s: any) => s.placePrediction)
+          .map((s: any) => ({
+            placeId: s.placePrediction.placeId,
+            description: s.placePrediction.text?.toString() || '',
+            rawPrediction: s.placePrediction,
+          }));
+
+        setResults(mappedSuggestions);
       } else {
-        // Fallback
-        onPlaceSelected({
-          placeId: prediction.place_id,
-          description: prediction.description,
-          latitude: 0,
-          longitude: 0,
-        });
+        setResults([]);
       }
-    } catch (error) {
-      console.error("Error obteniendo coordenadas:", error);
+    } catch (err) {
+      console.error('Error buscando sugerencias con Places (New):', err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelect = async (item: { placeId: string; description: string; rawPrediction?: any }) => {
+    setResults([]);
+    setQuery(item.description);
+
+    try {
+      let lat = 0;
+      let lng = 0;
+      let finalAddress = item.description;
+
+      if (item.rawPrediction?.toPlace) {
+        const place = item.rawPrediction.toPlace();
+        await place.fetchFields({
+          fields: ['formattedAddress', 'location'],
+        });
+
+        if (place.location) {
+          lat = typeof place.location.lat === 'function' ? place.location.lat() : Number(place.location.lat);
+          lng = typeof place.location.lng === 'function' ? place.location.lng() : Number(place.location.lng);
+        }
+        if (place.formattedAddress) {
+          finalAddress = place.formattedAddress;
+        }
+      }
+
       onPlaceSelected({
-        placeId: prediction.place_id,
-        description: prediction.description,
+        placeId: item.placeId,
+        description: finalAddress,
+        latitude: lat,
+        longitude: lng,
+      });
+    } catch (err) {
+      console.error('Error obteniendo coordenadas de lugar con Places (New):', err);
+      onPlaceSelected({
+        placeId: item.placeId,
+        description: item.description,
         latitude: 0,
         longitude: 0,
       });
-    } finally {
-      sessionTokenRef.current = "";
     }
   };
 
@@ -149,7 +120,7 @@ export default function AddressPicker({ onPlaceSelected, initialValue = "" }: Ad
 
       {loading && (
         <div className="flex justify-center mt-2">
-          <div className="w-4 h-4 rounded-full animate-spin border-2 border-solid border-purple-500 border-t-transparent"></div>
+          <div className="w-4 h-4 rounded-full animate-spin border-2 border-solid border-orange-500 border-t-transparent"></div>
         </div>
       )}
 
@@ -157,7 +128,7 @@ export default function AddressPicker({ onPlaceSelected, initialValue = "" }: Ad
         <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-md max-h-48 overflow-y-auto z-50">
           {results.map((item) => (
             <button
-              key={item.place_id}
+              key={item.placeId}
               type="button"
               onClick={() => handleSelect(item)}
               className="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-600 border-b border-gray-200 dark:border-gray-600 last:border-b-0 focus:outline-none"
@@ -172,4 +143,3 @@ export default function AddressPicker({ onPlaceSelected, initialValue = "" }: Ad
     </div>
   );
 }
-

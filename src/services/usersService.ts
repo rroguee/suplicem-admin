@@ -7,9 +7,21 @@ export interface User {
   identification: string;
   identificationType: string;
   email: string;
-  userType: 'client' | 'driver' | 'admin';
+  userType: 'client' | 'driver' | 'admin' | 'seller';
   driverCode?: string;
-  addresses: {
+  sellerCode?: string;
+  sellerId?: string;
+  sellerName?: string;
+  phone?: string;
+  status?: 'active' | 'inactive' | 'pending';
+  vehicle?: {
+    brand?: string;
+    model?: string;
+    year?: string | number;
+    tons?: string | number;
+    plateNumber?: string;
+  };
+  addresses?: {
     description: string;
     placeId: string;
     latitude: number;
@@ -27,7 +39,12 @@ export const getUsers = async () => {
     return response.data;
   };
   
-  export const activeOrInactiveUser = async (uid: string, status: string) => {
+export const getUserById = async (id: string) => {
+    const response = await protectedApi.get(`/users/${id}`);
+    return response.data;
+  };
+
+export const activeOrInactiveUser = async (uid: string, status: string) => {
     const response = await protectedApi.patch("/users/status", {
       uid,
       status,
@@ -35,3 +52,50 @@ export const getUsers = async () => {
     console.log("BODY:", response);
     return response.data;
   };
+
+export const assignClientSeller = async (clientUid: string, sellerId: string | null) => {
+    const response = await protectedApi.patch("/users/update", {
+      uid: clientUid,
+      sellerId: sellerId || null,
+    });
+    return response.data;
+  };
+
+export const updateUserAddresses = async (uid: string, addresses: any[]) => {
+  const response = await protectedApi.patch("/users/update", {
+    uid,
+    addresses,
+  });
+  return response.data;
+};
+
+export interface CreateUserPayload {
+  names: string;
+  lastNames: string;
+  email: string;
+  password: string;
+  identification: string;
+  identificationType?: "Cedula" | "Pasaporte";
+  phone: string;
+  userType: "client" | "driver" | "admin" | "seller";
+  sellerId?: string;
+  addresses?: {
+    description: string;
+    placeId: string;
+    latitude?: number;
+    longitude?: number;
+    additionalInfo?: string;
+  }[];
+  vehicle?: {
+    brand: string;
+    model: string;
+    year: string;
+    tons: string;
+    plateNumber: string;
+  };
+}
+
+export const createUserAccount = async (payload: CreateUserPayload) => {
+  const response = await protectedApi.post("/users", payload);
+  return response.data;
+};
