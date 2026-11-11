@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createContext, useState, useEffect, PropsWithChildren } from "react";
+import { clearAuthSession } from "@/utils/authStorage";
 
 // Definición de la interfaz Address (adaptada para web si es necesario, pero manteniendo la estructura)
 interface Address {
@@ -86,16 +87,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   // Función para cerrar sesión
-  // Se hace async para replicar el patrón de AsyncStorage
   const logOut = async () => {
     setIsLoggedIn(false);
     setUser(null);
     storeAuthState({ isLoggedIn: false, user: null });
 
-    // Simula clearAuthSession eliminando la clave de sesión
-    localStorage.removeItem("auth-session"); 
+    // Limpia la sesión JWT real y las claves de autenticación
+    clearAuthSession();
+    localStorage.removeItem(authStorageKey);
 
-    router.replace("/signin"); // Redirige a la página de inicio de sesión
+    router.replace("/signin");
   };
 
   // Efecto para cargar el estado de autenticación desde localStorage al montar el componente
