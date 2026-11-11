@@ -7,6 +7,7 @@ import { User } from "@/services/usersService";
 
 interface Props {
   clients: User[];
+  totalCount?: number;
   onNewOrder?: (client: User) => void;
   title?: string;
   subtitle?: string;
@@ -15,6 +16,7 @@ interface Props {
 
 export const DashboardTopClients: React.FC<Props> = ({
   clients,
+  totalCount,
   onNewOrder,
   title,
   subtitle,
@@ -38,7 +40,7 @@ export const DashboardTopClients: React.FC<Props> = ({
           href="/admin/user"
           className="flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-600 dark:text-orange-400"
         >
-          Ver todos ({clients.length}) <ArrowUpRight className="h-3.5 w-3.5" />
+          Ver todos ({totalCount ?? clients.length}) <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 

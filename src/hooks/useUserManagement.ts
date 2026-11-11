@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getUsers, activeOrInactiveUser, User } from '@/services/usersService';
 import { UserRoleFilter, UserStatusFilter } from '@/components/tables/users/UserFilterChips';
 
@@ -17,14 +17,31 @@ const ITEMS_PER_PAGE = 8;
 
 export function useUserManagement() {
   const [users, setUsers] = useState<User[]>([]);
+  const [activeSellers, setActiveSellers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+
+  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({
+    all: 0,
+    client: 0,
+    seller: 0,
+    driver: 0,
+    admin: 0,
+  });
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({
+    all: 0,
+    active: 0,
+    inactive: 0,
+  });
 
   // Filtros y búsqueda
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<UserRoleFilter>('all');
-  const [statusFilter, setStatusFilter] = useState<UserStatusFilter>('all');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [roleFilter, setRoleFilterState] = useState<UserRoleFilter>('all');
+  const [statusFilter, setStatusFilterState] = useState<UserStatusFilter>('all');
 
   // Modal de Detalle
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -46,13 +63,53 @@ export function useUserManagement() {
     setAlertConfig((prev) => ({ ...prev, isOpen: false }));
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const setRoleFilter = (role: UserRoleFilter) => {
+    setRoleFilterState(role);
+    setCurrentPage(1);
+  };
+
+  const setStatusFilter = (status: UserStatusFilter) => {
+    setStatusFilterState(status);
+    setCurrentPage(1);
+  };
+
+  const fetchActiveSellers = useCallback(async () => {
+    try {
+      const response = await getUsers({ userType: 'seller', status: 'active' });
+      if (response?.success) {
+        setActiveSellers(response.users || []);
+      }
+    } catch {
+      // Silenciar fallo secundario al cargar lista de vendedores para asignación
+    }
+  }, []);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await getUsers();
+      const response = await getUsers({
+        userType: roleFilter === 'all' ? undefined : roleFilter,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        search: debouncedSearch.trim() || undefined,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      });
+
       if (response.success) {
-        setUsers(response.users);
+        setUsers(response.users || []);
+        setTotalPages(response.pagination?.totalPages || 1);
+        setTotalUsers(response.pagination?.total ?? (response.users || []).length);
+        if (response.roleCounts) setRoleCounts(response.roleCounts);
+        if (response.statusCounts) setStatusCounts(response.statusCounts);
       } else {
         showAlert({
           type: 'error',
@@ -70,94 +127,15 @@ export function useUserManagement() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [roleFilter, statusFilter, debouncedSearch, currentPage]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Contadores reactivos para roles
-  const roleCounts = useMemo(() => {
-    const relevant = statusFilter === 'all'
-      ? users
-      : users.filter((u) => {
-          const st = u.status?.toLowerCase();
-          if (statusFilter === 'active') return st === 'active';
-          if (statusFilter === 'inactive') return st === 'inactive' || st === 'pending';
-          return true;
-        });
-
-    const counts: Record<string, number> = { all: relevant.length, client: 0, seller: 0, driver: 0, admin: 0 };
-    relevant.forEach((u) => {
-      const role = u.userType?.toLowerCase();
-      if (role && counts[role] !== undefined) {
-        counts[role]++;
-      }
-    });
-    return counts;
-  }, [users, statusFilter]);
-
-  // Contadores reactivos para estado
-  const statusCounts = useMemo(() => {
-    const relevant = roleFilter === 'all'
-      ? users
-      : users.filter((u) => u.userType?.toLowerCase() === roleFilter);
-
-    const counts: Record<string, number> = { all: relevant.length, active: 0, inactive: 0 };
-    relevant.forEach((u) => {
-      const st = u.status?.toLowerCase();
-      if (st === 'active') counts.active++;
-      else if (st === 'inactive' || st === 'pending') counts.inactive++;
-    });
-    return counts;
-  }, [users, roleFilter]);
-
-  // Filtrado compuesto
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      if (roleFilter !== 'all' && user.userType?.toLowerCase() !== roleFilter) {
-        return false;
-      }
-
-      if (statusFilter === 'active' && user.status?.toLowerCase() !== 'active') {
-        return false;
-      }
-      if (
-        statusFilter === 'inactive' &&
-        user.status?.toLowerCase() !== 'inactive' &&
-        user.status?.toLowerCase() !== 'pending'
-      ) {
-        return false;
-      }
-
-      const query = searchQuery.toLowerCase().trim();
-      if (!query) return true;
-
-      const driverCode = user.driverCode || (user.uid ? `cond-${user.uid.slice(0, 5)}` : '');
-      const sellerCode = user.sellerCode || (user.uid ? `vend-${user.uid.slice(0, 5)}` : '');
-
-      return (
-        user.names?.toLowerCase().includes(query) ||
-        user.lastNames?.toLowerCase().includes(query) ||
-        user.email?.toLowerCase().includes(query) ||
-        user.identification?.toLowerCase().includes(query) ||
-        driverCode.toLowerCase().includes(query) ||
-        sellerCode.toLowerCase().includes(query) ||
-        user.sellerName?.toLowerCase().includes(query) ||
-        user.vehicle?.plateNumber?.toLowerCase().includes(query)
-      );
-    });
-  }, [users, roleFilter, statusFilter, searchQuery]);
-
   useEffect(() => {
-    setCurrentPage(1);
-  }, [roleFilter, statusFilter, searchQuery]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+    fetchActiveSellers();
+  }, [fetchActiveSellers]);
 
   const handleOpenDetail = (user: User) => {
     setSelectedUser(user);
@@ -220,6 +198,7 @@ export function useUserManagement() {
 
   return {
     users,
+    activeSellers,
     loading,
     error,
     currentPage,
@@ -234,9 +213,10 @@ export function useUserManagement() {
     isDetailModalOpen,
     roleCounts,
     statusCounts,
-    filteredUsers,
+    filteredUsers: users,
+    totalUsers,
     totalPages,
-    paginatedUsers,
+    paginatedUsers: users,
     itemsPerPage: ITEMS_PER_PAGE,
     alertConfig,
     showAlert,

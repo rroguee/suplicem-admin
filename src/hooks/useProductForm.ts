@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getProducts, createProduct, updateProduct } from "@/services/prodcutsService";
+import { getProductById, createProduct, updateProduct } from "@/services/prodcutsService";
 import { parseFormattedNumber, formatNumberInput } from "@/utils/productLotUtils";
 
 export const useProductForm = (productId: string | null) => {
@@ -18,8 +18,8 @@ export const useProductForm = (productId: string | null) => {
 
   useEffect(() => {
     if (productId) {
-      getProducts().then((res: any) => {
-        const prod = (res.products || []).find((p: any) => String(p.id) === String(productId));
+      getProductById(productId).then((res: any) => {
+        const prod = res?.product;
         if (prod) {
           setName(prod.name || "");
           setUnit(prod.unit || "fundas");

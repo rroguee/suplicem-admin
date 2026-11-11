@@ -33,14 +33,14 @@ export function useOrderApproval(orderId: string) {
         setLoading(true);
         const [orderRes, usersRes] = await Promise.all([
           getOrderDetail(orderId),
-          getUsers(),
+          getUsers({ userType: "driver" }),
         ]);
 
         const orderData = orderRes.order || orderRes.data || orderRes;
         setOrder(orderData);
 
         const allUsers = Array.isArray(usersRes) ? usersRes : usersRes.users || [];
-        setDrivers(allUsers.filter((u: any) => u.userType === "driver"));
+        setDrivers(allUsers);
 
         const rawDeliveries = orderData.deliveries && orderData.deliveries.length > 0
           ? orderData.deliveries

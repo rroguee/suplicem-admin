@@ -1,13 +1,18 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { Modal } from "@/components/ui/modal";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
-import AddressPicker from "@/hooks/AddressPicker";
 import { useCreateUserModal } from "@/hooks/useCreateUserModal";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
+
+const AddressPicker = dynamic(() => import("@/hooks/AddressPicker"), {
+  ssr: false,
+  loading: () => <div className="h-10 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />,
+});
 
 interface Props {
   isOpen: boolean;

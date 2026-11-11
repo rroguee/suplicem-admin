@@ -1,9 +1,14 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { Modal } from '@/components/ui/modal';
 import Button from '@/components/ui/button/Button';
-import AddressPicker from '@/hooks/AddressPicker';
+
+const AddressPicker = dynamic(() => import('@/hooks/AddressPicker'), {
+  ssr: false,
+  loading: () => <div className="h-10 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />,
+});
 
 export interface NewAddressFormState {
   description: string;

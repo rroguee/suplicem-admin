@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState,useCallback, useContext } from "reac
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useSidebar } from "../context/SidebarContext";
+import { useSidebar, useSidebarHover } from "../context/SidebarContext";
 import { AuthContext } from "@/context/authContext";
 import {
   TaskIcon,
@@ -17,7 +17,6 @@ import {
   PlugInIcon,
 } from "../icons/index";
 import { Plus } from "lucide-react";
-import { CreateAssistedOrderModal } from "@/components/orders/CreateAssistedOrderModal";
 /*import SidebarWidget from "./SidebarWidget";*/
 
 type NavItem = {
@@ -78,11 +77,11 @@ const othersItems: NavItem[] = [
 ];
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen } = useSidebar();
+  const { isHovered, setIsHovered } = useSidebarHover();
   const { user } = useContext(AuthContext);
   const isSeller = user?.userType === "seller";
   const pathname = usePathname();
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Filtrar opciones restringidas para vendedores
   const filteredNavItems = navItems.map((item) => {
@@ -391,18 +390,6 @@ const AppSidebar: React.FC = () => {
         </nav>
         {/*isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null*/}
       </div>
-
-      {isOrderModalOpen && (
-        <CreateAssistedOrderModal
-          isOpen={isOrderModalOpen}
-          onClose={() => setIsOrderModalOpen(false)}
-          onOrderCreated={() => {
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new Event("order-created"));
-            }
-          }}
-        />
-      )}
     </aside>
   );
 };

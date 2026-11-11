@@ -1,9 +1,14 @@
 "use client";
 
 import React from "react";
-import AddressPicker from "@/hooks/AddressPicker";
+import dynamic from "next/dynamic";
 import { UseAssistedOrderReturn } from "@/hooks/useAssistedOrder";
 import { MapPin, PlusCircle, List, User as UserIcon } from "lucide-react";
+
+const AddressPicker = dynamic(() => import("@/hooks/AddressPicker"), {
+  ssr: false,
+  loading: () => <div className="h-10 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />,
+});
 
 interface Props {
   state: UseAssistedOrderReturn;

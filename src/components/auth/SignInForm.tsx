@@ -113,7 +113,6 @@ export default function SignInForm() {
             title: 'Inicio de sesión exitoso',
             message: 'Bienvenido de nuevo.',
           });
-          router.replace("/admin");
         } else {
           showAlert({
             type: 'error',

@@ -1,7 +1,14 @@
 import protectedApi from "./protectedApi";
 
-export const getAllTrips = async () => {
-  const response = await protectedApi.get("/trips");
+export interface TripsQueryParams {
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const getAllTrips = async (params?: TripsQueryParams) => {
+  const response = await protectedApi.get("/trips", { params });
   return response.data;
 };
 

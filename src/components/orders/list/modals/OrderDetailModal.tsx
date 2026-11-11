@@ -1,13 +1,18 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { Modal } from '@/components/ui/modal';
 import Button from '@/components/ui/button/Button';
 import { ServiceOrder, EditableDelivery } from '../types';
 import { User } from '@/services/usersService';
 import { OrderTripsProgressCard, TripItem } from '../../logistics/OrderTripsProgressCard';
-import TripMap from '@/components/TripMap';
 import { formatRD } from '@/utils/currencyUtils';
+
+const TripMap = dynamic(() => import('@/components/TripMap'), {
+  ssr: false,
+  loading: () => <div className="h-[260px] w-full animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />,
+});
 
 interface OrderDetailModalProps {
   isOpen: boolean;

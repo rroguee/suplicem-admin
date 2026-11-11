@@ -1,19 +1,39 @@
 "use client";
 
-import { useSidebar } from "@/context/SidebarContext";
+import { useSidebar, useSidebarHover } from "@/context/SidebarContext";
 import { AuthContext } from "@/context/authContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import React, { useContext, useEffect } from "react";
 
+function AdminMainArea({ children }: { children: React.ReactNode }) {
+  const { isExpanded, isMobileOpen } = useSidebar();
+  const { isHovered } = useSidebarHover();
+
+  const mainContentMargin = isMobileOpen
+    ? "ml-0"
+    : isExpanded || isHovered
+    ? "lg:ml-[290px]"
+    : "lg:ml-[90px]";
+
+  return (
+    <div
+      className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
+    >
+      <AppHeader />
+      <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+    </div>
+  );
+}
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const { isLoggedIn, isReady, user, logOut } = useContext(AuthContext);
   const router = useRouter();
 
@@ -45,27 +65,15 @@ export default function AdminLayout({
     );
   }
 
-  // Dynamic class for main content margin based on sidebar state
-  const mainContentMargin = isMobileOpen
-    ? "ml-0"
-    : isExpanded || isHovered
-    ? "lg:ml-[290px]"
-    : "lg:ml-[90px]";
-
   return (
-    <div className="min-h-screen xl:flex">
-      {/* Sidebar and Backdrop */}
-      <AppSidebar />
-      <Backdrop />
-      {/* Main Content Area */}
-      <div
-        className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
-      >
-        {/* Header */}
-        <AppHeader />
-        {/* Page Content */}
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+    <NotificationProvider>
+      <div className="min-h-screen xl:flex">
+        {/* Sidebar and Backdrop */}
+        <AppSidebar />
+        <Backdrop />
+        {/* Main Content Area isolated from hover state */}
+        <AdminMainArea>{children}</AdminMainArea>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

@@ -45,7 +45,11 @@ export interface User {
 export interface UserQueryParams {
   status?: string;
   userType?: string;
+  sellerId?: string;
   aiRiskFlag?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export const getUsers = async (params?: UserQueryParams) => {

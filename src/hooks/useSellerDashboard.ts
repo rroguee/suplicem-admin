@@ -1,22 +1,41 @@
 import { useState, useEffect, useCallback, useContext, useRef } from "react";
 import { AuthContext } from "@/context/authContext";
-import { getOrders } from "@/services/ordersService";
-import { getUsers, User } from "@/services/usersService";
-import { getAllTrips } from "@/services/tripsService";
+import { User } from "@/services/usersService";
+import { getDashboardSummary, DashboardMetricsSummary } from "@/services/dashboardService";
+
+const COOLDOWN_MS = 10_000;
 
 export const useSellerDashboard = () => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [orders, setOrders] = useState<any[]>([]);
+
+  const [metrics, setMetrics] = useState<Pick<
+    DashboardMetricsSummary,
+    "totalBilled" | "totalTons" | "clientsCount" | "pendingOrdersCount" | "activeDeliveriesCount"
+  >>({
+    totalBilled: 0,
+    totalTons: 0,
+    clientsCount: 0,
+    pendingOrdersCount: 0,
+    activeDeliveriesCount: 0,
+  });
   const [clients, setClients] = useState<User[]>([]);
   const [activeTrips, setActiveTrips] = useState<any[]>([]);
   const [completedTrips, setCompletedTrips] = useState<any[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
-  const loadDashboardData = useCallback(async (silent = false) => {
+  const inFlightRef = useRef(false);
+  const lastLoadedAtRef = useRef(0);
+  const hasActiveTripsRef = useRef(false);
+
+  const loadDashboardData = useCallback(async (silent = false, force = false) => {
     if (!user?.uid) return;
+    if (inFlightRef.current) return;
+    if (!force && silent && Date.now() - lastLoadedAtRef.current < COOLDOWN_MS) return;
+
+    inFlightRef.current = true;
     if (silent) {
       setIsRefreshing(true);
     } else {
@@ -24,155 +43,75 @@ export const useSellerDashboard = () => {
     }
 
     try {
-      const [ordersResult, usersResult, tripsResult] = await Promise.allSettled([
-        getOrders(),
-        getUsers(),
-        getAllTrips(),
-      ]);
-
-      const ordersRes = ordersResult.status === "fulfilled" ? ordersResult.value : null;
-      const usersRes = usersResult.status === "fulfilled" ? usersResult.value : null;
-      const tripsRes = tripsResult.status === "fulfilled" ? tripsResult.value : null;
-
-      if (ordersResult.status === "rejected") {
-        console.error("Error al cargar órdenes en dashboard de vendedor:", ordersResult.reason);
-      }
-      if (usersResult.status === "rejected") {
-        console.error("Error al cargar clientes en dashboard de vendedor:", usersResult.reason);
-      }
-      if (tripsResult.status === "rejected") {
-        console.error("Error al cargar viajes en dashboard de vendedor:", tripsResult.reason);
-      }
-
-      const allOrders: any[] = ordersRes?.orders || ordersRes || [];
-      const myOrders = allOrders.filter(
-        (o) => o.createdBySellerId === user.uid || o.sellerId === user.uid
-      );
-      setOrders(myOrders);
-
-      const allUsers: User[] = usersRes?.users || [];
-      const myClients = allUsers.filter(
-        (u) => u.userType === "client" && u.sellerId === user.uid
-      );
-      setClients(myClients);
-
-      const allTrips: any[] = tripsRes?.trips || [];
-      const inTransit = allTrips.filter(
-        (t) => ["started", "accepted", "in_progress"].includes(t.status)
-      );
-      setActiveTrips(inTransit);
-
-      // Filtrar viajes completados de los últimos 7 días vinculados a clientes del vendedor
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      const finished = allTrips
-        .filter((t) => {
-          if (t.status !== "completed") return false;
-          const tDate = new Date(t.completedAt || t.updatedAt || t.createdAt || 0);
-          return tDate >= sevenDaysAgo;
-        })
-        .map((t) => {
-          const matchedOrder = myOrders.find((o) =>
-            (t.orderIds || []).includes(o.id) || (t.orderIds || []).includes(String(o.orderNumber))
-          );
-          const matchedDriver = allUsers.find(
-            (u) => u.uid === t.assignedDriverId || u.uid === t.driverId
-          );
-          return {
-            ...t,
-            clientName: matchedOrder
-              ? `${matchedOrder.userNames} ${matchedOrder.userLastNames || ""}`.trim()
-              : undefined,
-            driverName: matchedDriver
-              ? `${matchedDriver.names} ${matchedDriver.lastNames || ""}`.trim()
-              : t.driver?.names || undefined,
-          };
+      const res = await getDashboardSummary();
+      if (res?.success) {
+        const nextActive = res.activeTrips || [];
+        hasActiveTripsRef.current = nextActive.length > 0;
+        setMetrics({
+          totalBilled: res.metrics?.totalBilled || 0,
+          totalTons: res.metrics?.totalTons || 0,
+          clientsCount: res.metrics?.clientsCount || 0,
+          pendingOrdersCount: res.metrics?.pendingOrdersCount || 0,
+          activeDeliveriesCount: res.metrics?.activeDeliveriesCount || 0,
         });
-
-      setCompletedTrips(finished);
-      setLastUpdated(new Date());
+        setClients(res.clients || []);
+        setActiveTrips(nextActive);
+        setCompletedTrips(res.completedTrips || []);
+        setRecentOrders(res.recentOrders || []);
+        setLastUpdated(new Date());
+        lastLoadedAtRef.current = Date.now();
+      }
     } catch (err) {
       console.error("Error al cargar datos del dashboard de vendedor:", err);
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
       setIsRefreshing(false);
     }
   }, [user?.uid]);
 
-  // Carga inicial y listeners de ventana (Visibilidad y Foco)
   useEffect(() => {
-    loadDashboardData(false);
+    loadDashboardData(false, true);
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityOrFocus = () => {
       if (document.visibilityState === "visible") {
         loadDashboardData(true);
       }
     };
+    const handleOrderCreated = () => loadDashboardData(true, true);
 
-    const handleWindowFocus = () => {
-      loadDashboardData(true);
-    };
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    window.addEventListener("order-created", handleOrderCreated);
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleWindowFocus);
+    let tickCount = 0;
+    const intervalId = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      tickCount += 1;
+      // Con viajes activos refresca cada 15s; en reposo cada 30s
+      if (hasActiveTripsRef.current || tickCount % 2 === 0) {
+        loadDashboardData(true);
+      }
+    }, 15_000);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleWindowFocus);
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      window.removeEventListener("order-created", handleOrderCreated);
     };
   }, [loadDashboardData]);
-
-  // Polling dinámico adaptativo
-  useEffect(() => {
-    // Si hay camiones en ruta: actualizar cada 10 seg; de lo contrario cada 25 seg
-    const intervalTime = activeTrips.length > 0 ? 10000 : 25000;
-
-    timerRef.current = setInterval(() => {
-      // Solo consultar si la pestaña del navegador está visible para el vendedor
-      if (document.visibilityState === "visible") {
-        loadDashboardData(true);
-      }
-    }, intervalTime);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [activeTrips.length, loadDashboardData]);
-
-  // Cálculos de Negocio
-  const validOrders = orders.filter((o) => o.status !== "cancelled" && o.status !== "rejected");
-  const totalBilled = validOrders.reduce((acc, o) => {
-    const sum = (o.items || []).reduce((s: number, it: any) => s + (it.subtotal || it.quantity * it.unitPrice || 0), 0);
-    return acc + sum;
-  }, 0);
-
-  const totalTons = validOrders.reduce((acc, o) => {
-    if (typeof o.totalTons === "number") return acc + o.totalTons;
-    const bags = (o.items || [])
-      .filter((it: any) => (it.name || "").toLowerCase().includes("cemento"))
-      .reduce((s: number, it: any) => s + (it.quantity || 0), 0);
-    return acc + Number((bags * 0.0425).toFixed(2));
-  }, 0);
-
-  const pendingApprovalCount = orders.filter((o) => o.status === "pending").length;
 
   return {
     user,
     loading,
     isRefreshing,
     lastUpdated,
-    metrics: {
-      totalBilled,
-      totalTons: Number(totalTons.toFixed(2)),
-      clientsCount: clients.length,
-      pendingOrdersCount: pendingApprovalCount,
-      activeDeliveriesCount: activeTrips.length,
-    },
+    metrics,
     clients,
     activeTrips,
     completedTrips,
-    recentOrders: orders.slice(0, 5),
-    reload: () => loadDashboardData(true),
+    recentOrders,
+    reload: () => loadDashboardData(true, true),
   };
 };

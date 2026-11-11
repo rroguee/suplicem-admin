@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLoadScript } from '@react-google-maps/api';
 
 const libraries: any = ['places'];
@@ -25,14 +25,15 @@ export default function AddressPicker({ onPlaceSelected, initialValue = '' }: Ad
   const [query, setQuery] = useState<string>(initialValue);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSearch = async (text: string) => {
-    setQuery(text);
-    if (text.length < 3) {
-      setResults([]);
-      return;
-    }
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
+  const fetchSuggestions = async (text: string) => {
     if (!isLoaded || !window.google?.maps?.places) {
       return;
     }
@@ -65,6 +66,21 @@ export default function AddressPicker({ onPlaceSelected, initialValue = '' }: Ad
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (text: string) => {
+    setQuery(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (text.length < 3) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(() => {
+      fetchSuggestions(text);
+    }, 300);
   };
 
   const handleSelect = async (item: { placeId: string; description: string; rawPrediction?: any }) => {

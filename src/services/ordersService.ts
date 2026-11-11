@@ -1,7 +1,18 @@
 import protectedApi from "./protectedApi";
 
-export const getOrders = async () => {
-    const response = await protectedApi.get('/orders');
+export interface OrdersQueryParams {
+  status?: string;
+  deliveryType?: string;
+  userId?: string;
+  sellerId?: string;
+  withoutTrip?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const getOrders = async (params?: OrdersQueryParams) => {
+    const response = await protectedApi.get('/orders', { params });
     return response.data;
   };
   

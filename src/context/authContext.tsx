@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useState, useEffect, PropsWithChildren } from "react";
+import { createContext, useState, useEffect, useCallback, useMemo, PropsWithChildren } from "react";
 import { clearAuthSession } from "@/utils/authStorage";
 
 // Definición de la interfaz Address (adaptada para web si es necesario, pero manteniendo la estructura)
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   // Función para guardar el estado de autenticación en localStorage
   // Se hace async para replicar el patrón de AsyncStorage, aunque localStorage es síncrono
-  const storeAuthState = async (state: { isLoggedIn: boolean; user: User | null }) => {
+  const storeAuthState = useCallback(async (state: { isLoggedIn: boolean; user: User | null }) => {
     try {
       const jsonValue = JSON.stringify(state);
       // await no es estrictamente necesario para localStorage, pero se mantiene el patrón asíncrono
@@ -78,18 +78,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     } catch (error) {
       console.error("Error al guardar el estado de autenticación en localStorage:", error);
     }
-  };
+  }, []);
 
   // Función para iniciar sesión
-  const logIn = (userData: User) => {
+  const logIn = useCallback((userData: User) => {
     setIsLoggedIn(true);
     setUser(userData);
     storeAuthState({ isLoggedIn: true, user: userData });
-    router.replace("/"); // Redirige a la página principal después de iniciar sesión
-  };
+    router.replace("/admin");
+  }, [router, storeAuthState]);
 
   // Función para cerrar sesión
-  const logOut = async () => {
+  const logOut = useCallback(async () => {
     setIsLoggedIn(false);
     setUser(null);
     storeAuthState({ isLoggedIn: false, user: null });
@@ -99,15 +99,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
     localStorage.removeItem(authStorageKey);
 
     router.replace("/signin");
-  };
+  }, [router, storeAuthState]);
 
   // Función para actualizar los datos del usuario en la sesión activa
-  const updateUserSession = (updatedFields: Partial<User>) => {
-    if (!user) return;
-    const updatedUser = { ...user, ...updatedFields };
-    setUser(updatedUser);
-    storeAuthState({ isLoggedIn: true, user: updatedUser });
-  };
+  const updateUserSession = useCallback((updatedFields: Partial<User>) => {
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      const updatedUser = { ...prevUser, ...updatedFields };
+      storeAuthState({ isLoggedIn: true, user: updatedUser });
+      return updatedUser;
+    });
+  }, [storeAuthState]);
 
   // Efecto para cargar el estado de autenticación desde localStorage al montar el componente
   useEffect(() => {
@@ -133,8 +135,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // Si necesitas alguna lógica similar para "ocultar" una pantalla de carga inicial en web,
   // tendrías que implementarla de forma diferente (ej. con CSS o un componente de carga).
 
+  const authContextValue = useMemo(
+    () => ({ isLoggedIn, isReady, user, logIn, logOut, updateUserSession }),
+    [isLoggedIn, isReady, user, logIn, logOut, updateUserSession]
+  );
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, isReady, user, logIn, logOut, updateUserSession }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );

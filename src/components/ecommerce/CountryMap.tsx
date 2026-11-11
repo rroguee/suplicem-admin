@@ -1,6 +1,5 @@
-import React from "react";
-// import { VectorMap } from "@react-jvectormap/core";
-import { worldMill } from "@react-jvectormap/world";
+"use client";
+import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
 const VectorMap = dynamic(
@@ -33,9 +32,25 @@ type Marker = {
 };
 
 const CountryMap: React.FC<CountryMapProps> = ({ mapColor }) => {
+  const [worldMap, setWorldMap] = useState<any>(null);
+
+  useEffect(() => {
+    let active = true;
+    import("@react-jvectormap/world").then((mod) => {
+      if (active) setWorldMap(mod.worldMill);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!worldMap) {
+    return <div className="h-[212px] w-full animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />;
+  }
+
   return (
     <VectorMap
-      map={worldMill}
+      map={worldMap}
       backgroundColor="transparent"
       markerStyle={
         {

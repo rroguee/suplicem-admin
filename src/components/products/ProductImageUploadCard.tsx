@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 interface Props {
   imageUrl: string;
@@ -14,7 +14,21 @@ export const ProductImageUploadCard: React.FC<Props> = ({
   onRemoveImage,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewSrc = imageFile ? URL.createObjectURL(imageFile) : imageUrl;
+  const [objectUrl, setObjectUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (!imageFile) {
+      setObjectUrl("");
+      return;
+    }
+    const nextUrl = URL.createObjectURL(imageFile);
+    setObjectUrl(nextUrl);
+    return () => {
+      URL.revokeObjectURL(nextUrl);
+    };
+  }, [imageFile]);
+
+  const previewSrc = imageFile ? objectUrl : imageUrl;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">

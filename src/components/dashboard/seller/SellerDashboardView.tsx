@@ -9,7 +9,6 @@ import { DashboardActiveDeliveries } from "../shared/DashboardActiveDeliveries";
 import { DashboardTopClients } from "../shared/DashboardTopClients";
 import { DashboardRecentOrders } from "../shared/DashboardRecentOrders";
 import { DashboardCompletedTrips } from "../shared/DashboardCompletedTrips";
-import { CreateAssistedOrderModal } from "@/components/orders/CreateAssistedOrderModal";
 import { User } from "@/services/usersService";
 
 export const SellerDashboardView: React.FC = () => {
@@ -116,6 +115,7 @@ export const SellerDashboardView: React.FC = () => {
         <div className="lg:col-span-5">
           <DashboardTopClients
             clients={clients}
+            totalCount={metrics.clientsCount}
             onNewOrder={handleOpenNewOrder}
             isGlobal={false}
           />

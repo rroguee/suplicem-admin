@@ -38,6 +38,11 @@ export const getProducts = async () => {
   return response.data;
 };
 
+export const getProductById = async (id: string) => {
+  const response = await protectedApi.get(`/products/${id}`);
+  return response.data;
+};
+
 export const updateProduct = async (
   id: string | number,
   product: Partial<{

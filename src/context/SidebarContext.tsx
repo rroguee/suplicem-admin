@@ -1,25 +1,37 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 type SidebarContextType = {
   isExpanded: boolean;
   isMobileOpen: boolean;
-  isHovered: boolean;
   activeItem: string | null;
   openSubmenu: string | null;
   toggleSidebar: () => void;
   toggleMobileSidebar: () => void;
-  setIsHovered: (isHovered: boolean) => void;
   setActiveItem: (item: string | null) => void;
   toggleSubmenu: (item: string) => void;
 };
 
+type SidebarHoverContextType = {
+  isHovered: boolean;
+  setIsHovered: (isHovered: boolean) => void;
+};
+
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
+const SidebarHoverContext = createContext<SidebarHoverContextType | undefined>(undefined);
 
 export const useSidebar = () => {
   const context = useContext(SidebarContext);
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider");
+  }
+  return context;
+};
+
+export const useSidebarHover = () => {
+  const context = useContext(SidebarHoverContext);
+  if (!context) {
+    throw new Error("useSidebarHover must be used within a SidebarProvider");
   }
   return context;
 };
@@ -51,34 +63,54 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     setIsExpanded((prev) => !prev);
-  };
+  }, []);
 
-  const toggleMobileSidebar = () => {
+  const toggleMobileSidebar = useCallback(() => {
     setIsMobileOpen((prev) => !prev);
-  };
+  }, []);
 
-  const toggleSubmenu = (item: string) => {
+  const toggleSubmenu = useCallback((item: string) => {
     setOpenSubmenu((prev) => (prev === item ? null : item));
-  };
+  }, []);
+
+  const sidebarValue = useMemo(
+    () => ({
+      isExpanded: isMobile ? false : isExpanded,
+      isMobileOpen,
+      activeItem,
+      openSubmenu,
+      toggleSidebar,
+      toggleMobileSidebar,
+      setActiveItem,
+      toggleSubmenu,
+    }),
+    [
+      isMobile,
+      isExpanded,
+      isMobileOpen,
+      activeItem,
+      openSubmenu,
+      toggleSidebar,
+      toggleMobileSidebar,
+      toggleSubmenu,
+    ]
+  );
+
+  const hoverValue = useMemo(
+    () => ({
+      isHovered,
+      setIsHovered,
+    }),
+    [isHovered]
+  );
 
   return (
-    <SidebarContext.Provider
-      value={{
-        isExpanded: isMobile ? false : isExpanded,
-        isMobileOpen,
-        isHovered,
-        activeItem,
-        openSubmenu,
-        toggleSidebar,
-        toggleMobileSidebar,
-        setIsHovered,
-        setActiveItem,
-        toggleSubmenu,
-      }}
-    >
-      {children}
+    <SidebarContext.Provider value={sidebarValue}>
+      <SidebarHoverContext.Provider value={hoverValue}>
+        {children}
+      </SidebarHoverContext.Provider>
     </SidebarContext.Provider>
   );
 };

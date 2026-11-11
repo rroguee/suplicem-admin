@@ -50,7 +50,7 @@ export function useAssistedOrder(
     setErrorMessage(null);
     try {
       const [usersRes, prodsRes, banksRes] = await Promise.all([
-        getUsers(),
+        getUsers({ userType: "client" }),
         getProducts(),
         getBankAccounts(),
       ]);

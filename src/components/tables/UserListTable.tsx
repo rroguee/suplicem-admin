@@ -35,7 +35,8 @@ const UserListTable: React.FC = () => {
     isDetailModalOpen,
     roleCounts,
     statusCounts,
-    filteredUsers,
+    activeSellers,
+    totalUsers,
     totalPages,
     paginatedUsers,
     itemsPerPage,
@@ -47,10 +48,6 @@ const UserListTable: React.FC = () => {
     handleCloseDetail,
     handleStatusChange,
   } = useUserManagement();
-
-  const activeSellers = users.filter(
-    (u) => u.userType === 'seller' && u.status === 'active'
-  );
 
   return (
     <div className="w-full space-y-4">
@@ -117,13 +114,13 @@ const UserListTable: React.FC = () => {
           </div>
         )}
 
-        {!loading && !error && filteredUsers.length === 0 && (
+        {!loading && !error && totalUsers === 0 && (
           <div className="p-12 text-center text-xs text-gray-500 dark:text-gray-400">
             No se encontraron usuarios con los filtros aplicados.
           </div>
         )}
 
-        {!loading && !error && filteredUsers.length > 0 && (
+        {!loading && !error && totalUsers > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -150,7 +147,7 @@ const UserListTable: React.FC = () => {
         )}
 
         {/* Paginación y Contador */}
-        {!loading && !error && filteredUsers.length > 0 && (
+        {!loading && !error && totalUsers > 0 && (
           <div className="p-3.5 border-t border-gray-100 dark:border-gray-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 dark:text-gray-400">
             <div>
               Mostrando{' '}
@@ -159,11 +156,11 @@ const UserListTable: React.FC = () => {
               </span>{' '}
               a{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-200 tabular-nums">
-                {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
+                {Math.min(currentPage * itemsPerPage, totalUsers)}
               </span>{' '}
               de{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-200 tabular-nums">
-                {filteredUsers.length}
+                {totalUsers}
               </span>{' '}
               usuarios
             </div>

@@ -11,7 +11,6 @@ import { DashboardRecentOrders } from "../shared/DashboardRecentOrders";
 import { DashboardCompletedTrips } from "../shared/DashboardCompletedTrips";
 import { AdminSellersCard } from "./AdminSellersCard";
 import { AdminDriversCard } from "./AdminDriversCard";
-import { CreateAssistedOrderModal } from "@/components/orders/CreateAssistedOrderModal";
 import { User } from "@/services/usersService";
 
 export const AdminDashboardView: React.FC = () => {
@@ -116,6 +115,7 @@ export const AdminDashboardView: React.FC = () => {
         <div className="lg:col-span-5">
           <DashboardTopClients
             clients={clients}
+            totalCount={metrics.clientsCount}
             onNewOrder={handleOpenNewOrder}
             isGlobal={true}
           />

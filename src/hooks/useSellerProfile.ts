@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getUsers, assignClientSeller, User } from "@/services/usersService";
+import { getUserById, getUsers, assignClientSeller, User } from "@/services/usersService";
 import { getOrders } from "@/services/ordersService";
 
 export const useSellerProfile = (sellerId: string | null) => {
@@ -20,36 +20,27 @@ export const useSellerProfile = (sellerId: string | null) => {
     setLoading(true);
     setError(null);
     try {
-      const [usersRes, ordersRes] = await Promise.all([getUsers(), getOrders()]);
+      const [sellerRes, sellersRes, clientsRes, ordersRes] = await Promise.all([
+        getUserById(sellerId),
+        getUsers({ userType: "seller", status: "active" }),
+        getUsers({ userType: "client", sellerId }),
+        getOrders({ sellerId }),
+      ]);
 
-      const allUsersList: User[] = usersRes?.users || [];
-      const currentSeller = allUsersList.find(
-        (u) => u.uid === sellerId && u.userType === "seller"
-      );
+      const currentSeller: User | undefined = sellerRes?.user;
 
-      if (!currentSeller) {
+      if (!currentSeller || currentSeller.userType !== "seller") {
         setError("Vendedor no encontrado.");
         setLoading(false);
         return;
       }
 
       setSeller(currentSeller);
-      setAllSellers(
-        allUsersList.filter(
-          (u) => u.userType === "seller" && u.status === "active"
-        )
-      );
-      setClients(
-        allUsersList.filter(
-          (u) => u.userType === "client" && u.sellerId === sellerId
-        )
-      );
+      setAllSellers(sellersRes?.users || []);
+      setClients(clientsRes?.users || []);
 
       const allOrdersList: any[] = ordersRes?.orders || ordersRes || [];
-      const assistedOrders = allOrdersList.filter(
-        (o) => o.createdBySellerId === sellerId || o.sellerId === sellerId
-      );
-      setOrders(assistedOrders);
+      setOrders(allOrdersList);
     } catch (err: any) {
       console.error("Error al cargar perfil de vendedor:", err);
       setError("Error al cargar la información del vendedor.");

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ServiceOrder, EditableDelivery, AlertConfig } from '../types';
 import { FilterStatus } from '../../logistics/OrderFilterChips';
@@ -14,7 +14,6 @@ import {
 } from '@/services/ordersService';
 import { getTripByOrderId, assignTripDriver, splitOrderTrips } from '@/services/tripsService';
 import { NewAddressFormState } from '../modals/OrderAddAddressModal';
-import { useOrdersFilters } from './useOrdersFilters';
 
 const ITEMS_PER_PAGE = 7;
 
@@ -25,8 +24,27 @@ export function useOrdersList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('Todos');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilterState] = useState<FilterStatus>('Todos');
+
+  const [orderCounts, setOrderCounts] = useState<Record<string, number>>({
+    Todos: 0,
+    pending: 0,
+    'Alertas IA': 0,
+    approved: 0,
+    on_the_way: 0,
+    completed: 0,
+    rejected: 0,
+  });
+  const [kpis, setKpis] = useState({
+    pendingCount: 0,
+    pendingAmount: 0,
+    inRouteCount: 0,
+    approvedCount: 0,
+    aiRiskCount: 0,
+  });
 
   const [users, setUsers] = useState<User[]>([]);
   const [drivers, setDrivers] = useState<User[]>([]);
@@ -35,25 +53,20 @@ export function useOrdersList() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [orderToRejectId, setOrderToRejectId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
-
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [editedDeliveryType, setEditedDeliveryType] = useState('');
   const [editedDeliveries, setEditedDeliveries] = useState<EditableDelivery[]>([]);
   const [orderTracking, setOrderTracking] = useState<any>(null);
-
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null);
   const [receiptOrderNumber, setReceiptOrderNumber] = useState<number | string>('');
-
   const [isPlannerOpen, setIsPlannerOpen] = useState(false);
   const [orderForPlanning, setOrderForPlanning] = useState<ServiceOrder | null>(null);
-
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const [tripForDriver, setTripForDriver] = useState<TripItem | null>(null);
   const [orderTrips, setOrderTrips] = useState<TripItem[]>([]);
-
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
   const [newAddressData, setNewAddressData] = useState<NewAddressFormState>({
     description: '',
@@ -74,8 +87,6 @@ export function useOrdersList() {
     message: '',
   });
 
-  const trackingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
   const showAlert = (config: Omit<AlertConfig, 'isOpen'>) => {
     setAlertConfig({ ...config, isOpen: true });
   };
@@ -84,13 +95,27 @@ export function useOrdersList() {
     setAlertConfig((prev) => ({ ...prev, isOpen: false }));
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const setStatusFilter = (status: FilterStatus) => {
+    setStatusFilterState(status);
+    setCurrentPage(1);
+  };
+
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await getUsers();
-      if (response.success) {
-        setUsers(response.users.filter((u: User) => u.userType === 'client'));
-        setDrivers(response.users.filter((u: User) => u.userType === 'driver'));
-      }
+      const [clientsRes, driversRes] = await Promise.all([
+        getUsers({ userType: 'client' }),
+        getUsers({ userType: 'driver' }),
+      ]);
+      if (clientsRes?.success) setUsers(clientsRes.users || []);
+      if (driversRes?.success) setDrivers(driversRes.users || []);
     } catch (err) {
       console.error('Error fetching users:', err);
     }
@@ -125,38 +150,35 @@ export function useOrdersList() {
     setLoading(true);
     setError(null);
     try {
-      const response = await getOrders();
+      const response = await getOrders({
+        status: statusFilter,
+        search: debouncedSearch.trim() || undefined,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      });
+
       if (response.success) {
-        const sorted = (response.orders || []).sort((a: ServiceOrder, b: ServiceOrder) => {
-          const priority: Record<string, number> = { pending: 1, approved: 2, on_the_way: 3, completed: 4 };
-          const pA = priority[a.status] || 99;
-          const pB = priority[b.status] || 99;
-          if (pA !== pB) return pA - pB;
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-        setOrders(sorted);
+        setOrders(response.orders || []);
+        setTotalPages(response.pagination?.totalPages || 1);
+        if (response.orderCounts) setOrderCounts(response.orderCounts);
+        if (response.kpis) setKpis(response.kpis);
       } else {
         setError('Error al cargar órdenes.');
       }
-    } catch (err) {
+    } catch {
       setError('No se pudieron cargar las órdenes.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter, debouncedSearch, currentPage]);
 
   useEffect(() => {
     fetchOrders();
-    fetchUsers();
-  }, [fetchOrders, fetchUsers]);
+  }, [fetchOrders]);
 
-  const { filteredOrders, paginatedOrders, orderCounts, totalPages, kpis } = useOrdersFilters({
-    orders,
-    search,
-    statusFilter,
-    currentPage,
-    itemsPerPage: ITEMS_PER_PAGE,
-  });
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleApproveOrder = (order: ServiceOrder) => {
     router.push(`/admin/orders/${order.id}/approval`);
@@ -178,7 +200,7 @@ export function useOrdersList() {
         fetchOrders();
         setIsRejectModalOpen(false);
       }
-    } catch (err) {
+    } catch {
       showAlert({ type: 'error', title: 'Error', message: 'No se pudo rechazar la orden.' });
     } finally {
       setLoading(false);
@@ -199,7 +221,6 @@ export function useOrdersList() {
   };
 
   const closeDetailModal = () => {
-    if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
     setIsDetailModalOpen(false);
     setSelectedOrder(null);
   };
@@ -255,7 +276,7 @@ export function useOrdersList() {
   };
 
   return {
-    orders: paginatedOrders,
+    orders,
     loading,
     error,
     currentPage,

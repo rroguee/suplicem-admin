@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Trip, TripFilterStatus } from '../types';
-import { useTripFilters } from './useTripFilters';
 import { getAllTrips, getTripDetail, getDriverLocation } from '@/services/tripsService';
 
 const ITEMS_PER_PAGE = 7;
@@ -13,8 +12,29 @@ export function useTripsList() {
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<TripFilterStatus>('Todos');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilterState] = useState<TripFilterStatus>('Todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTripsCount, setTotalTripsCount] = useState(0);
+
+  const [counts, setCounts] = useState<Record<TripFilterStatus, number>>({
+    Todos: 0,
+    available: 0,
+    accepted: 0,
+    fractional: 0,
+    completed: 0,
+    canceled: 0,
+  });
+
+  const [kpis, setKpis] = useState({
+    totalTrips: 0,
+    pendingTrips: 0,
+    inRouteTrips: 0,
+    fractionalTrips: 0,
+    completedTrips: 0,
+    totalTonsInTransit: 0,
+  });
 
   // Modales
   const [isCreateTripModalOpen, setIsCreateTripModalOpen] = useState(false);
@@ -24,49 +44,49 @@ export function useTripsList() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const setStatusFilter = (status: TripFilterStatus) => {
+    setStatusFilterState(status);
+    setCurrentPage(1);
+  };
+
   const fetchTrips = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await getAllTrips();
+      const response = await getAllTrips({
+        status: statusFilter,
+        search: debouncedSearch.trim() || undefined,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      });
+
       if (response.success) {
-        // Ordenar con viajes activos primero, luego pendientes
-        const sorted = (response.trips || []).sort((a: Trip, b: Trip) => {
-          const priority: Record<string, number> = {
-            started: 1,
-            in_progress: 1,
-            accepted: 2,
-            available: 3,
-            completed: 4,
-            canceled: 5,
-          };
-          const pA = priority[a.status || ''] || 99;
-          const pB = priority[b.status || ''] || 99;
-          if (pA !== pB) return pA - pB;
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-        setTrips(sorted);
+        setTrips(response.trips || []);
+        setTotalPages(response.pagination?.totalPages || 1);
+        setTotalTripsCount(response.pagination?.total ?? (response.trips || []).length);
+        if (response.counts) setCounts(response.counts);
+        if (response.kpis) setKpis(response.kpis);
       } else {
         setError('No se pudieron obtener los viajes.');
       }
-    } catch (err) {
+    } catch {
       setError('Error al conectar con el servidor.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter, debouncedSearch, currentPage]);
 
   useEffect(() => {
     fetchTrips();
   }, [fetchTrips]);
-
-  const { filteredTrips, paginatedTrips, counts, totalPages, kpis } = useTripFilters({
-    trips,
-    search,
-    statusFilter,
-    currentPage,
-    itemsPerPage: ITEMS_PER_PAGE,
-  });
 
   const handleViewTripDetail = async (tripId: string) => {
     setIsDetailModalOpen(true);
@@ -105,8 +125,8 @@ export function useTripsList() {
   };
 
   return {
-    trips: paginatedTrips,
-    totalTripsCount: filteredTrips.length,
+    trips,
+    totalTripsCount,
     loading,
     error,
     search,
@@ -119,7 +139,6 @@ export function useTripsList() {
     counts,
     kpis,
     fetchTrips,
-    // Detalle
     isDetailModalOpen,
     selectedTripDetail,
     detailLoading,
@@ -127,7 +146,6 @@ export function useTripsList() {
     driverLocation,
     handleViewTripDetail,
     closeDetailModal,
-    // Crear viaje
     isCreateTripModalOpen,
     setIsCreateTripModalOpen,
   };
