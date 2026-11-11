@@ -24,11 +24,25 @@ export const useSellerDashboard = () => {
     }
 
     try {
-      const [ordersRes, usersRes, tripsRes] = await Promise.all([
+      const [ordersResult, usersResult, tripsResult] = await Promise.allSettled([
         getOrders(),
         getUsers(),
         getAllTrips(),
       ]);
+
+      const ordersRes = ordersResult.status === "fulfilled" ? ordersResult.value : null;
+      const usersRes = usersResult.status === "fulfilled" ? usersResult.value : null;
+      const tripsRes = tripsResult.status === "fulfilled" ? tripsResult.value : null;
+
+      if (ordersResult.status === "rejected") {
+        console.error("Error al cargar órdenes en dashboard de vendedor:", ordersResult.reason);
+      }
+      if (usersResult.status === "rejected") {
+        console.error("Error al cargar clientes en dashboard de vendedor:", usersResult.reason);
+      }
+      if (tripsResult.status === "rejected") {
+        console.error("Error al cargar viajes en dashboard de vendedor:", tripsResult.reason);
+      }
 
       const allOrders: any[] = ordersRes?.orders || ordersRes || [];
       const myOrders = allOrders.filter(
