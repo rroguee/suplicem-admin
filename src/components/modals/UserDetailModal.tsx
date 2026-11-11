@@ -7,6 +7,7 @@ import Badge from '@/components/ui/badge/Badge';
 import Button from '@/components/ui/button/Button';
 import { User } from '@/services/usersService';
 import { translateRole, translateStatus } from '../tables/users/UserTableRow';
+import { AssignClientSellerSection } from './AssignClientSellerSection';
 import {
   CreditCard,
   Mail,
@@ -27,6 +28,8 @@ interface UserDetailModalProps {
   onClose: () => void;
   user: User | null;
   onStatusChange?: (user: User) => void;
+  sellers?: User[];
+  onSellerAssigned?: () => void;
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({
@@ -34,6 +37,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   onClose,
   user,
   onStatusChange,
+  sellers = [],
+  onSellerAssigned,
 }) => {
   const router = useRouter();
   const [copiedUid, setCopiedUid] = useState(false);
@@ -238,6 +243,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
               </div>
             ) : (
               <p className="text-xs text-gray-500 dark:text-gray-400">Sin direcciones registradas.</p>
+            )}
+
+            {onSellerAssigned && (
+              <AssignClientSellerSection
+                client={user}
+                sellers={sellers}
+                onAssigned={onSellerAssigned}
+              />
             )}
           </div>
         )}

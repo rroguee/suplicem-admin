@@ -20,6 +20,7 @@ const UserListTable: React.FC = () => {
   const { isOpen, openModal, closeModal } = useModal();
 
   const {
+    users,
     loading,
     error,
     currentPage,
@@ -46,6 +47,10 @@ const UserListTable: React.FC = () => {
     handleCloseDetail,
     handleStatusChange,
   } = useUserManagement();
+
+  const activeSellers = users.filter(
+    (u) => u.userType === 'seller' && u.status === 'active'
+  );
 
   return (
     <div className="w-full space-y-4">
@@ -195,6 +200,16 @@ const UserListTable: React.FC = () => {
         onClose={handleCloseDetail}
         user={selectedUser}
         onStatusChange={handleStatusChange}
+        sellers={activeSellers}
+        onSellerAssigned={() => {
+          handleCloseDetail();
+          fetchUsers();
+          showAlert({
+            type: 'success',
+            title: 'Cartera actualizada',
+            message: 'El vendedor asignado al cliente fue actualizado correctamente.',
+          });
+        }}
       />
 
       <CustomAlert
