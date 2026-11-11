@@ -45,6 +45,7 @@ type AuthState = {
   user: User | null;
   logIn: (user: User) => void;
   logOut: () => void;
+  updateUserSession: (userData: Partial<User>) => void;
 };
 
 const authStorageKey = "auth-web-key"; // Mantener la clave para localStorage
@@ -57,6 +58,7 @@ export const AuthContext = createContext<AuthState>({
   user: null,
   logIn: () => {}, // Función vacía por defecto
   logOut: () => {}, // Función vacía por defecto
+  updateUserSession: () => {},
 });
 
 // Componente proveedor de autenticación
@@ -99,6 +101,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     router.replace("/signin");
   };
 
+  // Función para actualizar los datos del usuario en la sesión activa
+  const updateUserSession = (updatedFields: Partial<User>) => {
+    if (!user) return;
+    const updatedUser = { ...user, ...updatedFields };
+    setUser(updatedUser);
+    storeAuthState({ isLoggedIn: true, user: updatedUser });
+  };
+
   // Efecto para cargar el estado de autenticación desde localStorage al montar el componente
   useEffect(() => {
     const getAuthFromStorage = async () => { // Se hace async para replicar el patrón de AsyncStorage
@@ -124,7 +134,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // tendrías que implementarla de forma diferente (ej. con CSS o un componente de carga).
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, isReady, user, logIn, logOut }}>
+    <AuthContext.Provider value={{ isLoggedIn, isReady, user, logIn, logOut, updateUserSession }}>
       {children}
     </AuthContext.Provider>
   );

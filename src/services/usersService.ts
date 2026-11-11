@@ -113,3 +113,14 @@ export const createUserAccount = async (payload: CreateUserPayload) => {
   const response = await protectedApi.post("/users", payload);
   return response.data;
 };
+
+export const updateCurrentUserProfile = async (
+  uid: string,
+  data: { names?: string; lastNames?: string; phone?: string }
+) => {
+  const response = await protectedApi.patch("/users/update", {
+    uid,
+    ...data,
+  });
+  return response.data;
+};
