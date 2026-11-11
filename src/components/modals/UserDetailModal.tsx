@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AuthContext } from '@/context/authContext';
 import { Modal } from '@/components/ui/modal';
 import Badge from '@/components/ui/badge/Badge';
 import Button from '@/components/ui/button/Button';
@@ -41,6 +42,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   onSellerAssigned,
 }) => {
   const router = useRouter();
+  const { user: authUser } = useContext(AuthContext);
+  const isAdmin = authUser?.userType === 'admin';
   const [copiedUid, setCopiedUid] = useState(false);
 
   if (!user) return null;
@@ -271,7 +274,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
         {/* Acciones del pie */}
         <div className="flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
-          {onStatusChange && (
+          {isAdmin && onStatusChange && (
             <Button
               size="sm"
               variant={user.status === 'active' ? 'outline' : 'primary'}

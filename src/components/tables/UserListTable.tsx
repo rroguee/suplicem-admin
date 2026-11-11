@@ -196,17 +196,21 @@ const UserListTable: React.FC = () => {
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetail}
         user={selectedUser}
-        onStatusChange={handleStatusChange}
+        onStatusChange={isSeller ? undefined : handleStatusChange}
         sellers={activeSellers}
-        onSellerAssigned={() => {
-          handleCloseDetail();
-          fetchUsers();
-          showAlert({
-            type: 'success',
-            title: 'Cartera actualizada',
-            message: 'El vendedor asignado al cliente fue actualizado correctamente.',
-          });
-        }}
+        onSellerAssigned={
+          isSeller
+            ? undefined
+            : () => {
+                handleCloseDetail();
+                fetchUsers();
+                showAlert({
+                  type: 'success',
+                  title: 'Cartera actualizada',
+                  message: 'El vendedor asignado al cliente fue actualizado correctamente.',
+                });
+              }
+        }
       />
 
       <CustomAlert
