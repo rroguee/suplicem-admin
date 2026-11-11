@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '@/context/authContext';
 import Button from '@/components/ui/button/Button';
 import Pagination from './Pagination';
 import { PlusIcon, PencilIcon, TrashBinIcon } from '@/icons';
@@ -53,6 +54,9 @@ const emptyForm: CreateBankAccountPayload = {
 };
 
 const BankAccountListTable = () => {
+  const { user: authUser } = useContext(AuthContext);
+  const isSeller = authUser?.userType === 'seller';
+
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -215,16 +219,18 @@ const BankAccountListTable = () => {
       />
 
       {/* Header */}
-      <div className="flex justify-end">
-        <Button
-          size="md"
-          variant="primary"
-          startIcon={<PlusIcon />}
-          onClick={handleOpenCreate}
-        >
-          Nueva Cuenta Bancaria
-        </Button>
-      </div>
+      {!isSeller && (
+        <div className="flex justify-end">
+          <Button
+            size="md"
+            variant="primary"
+            startIcon={<PlusIcon />}
+            onClick={handleOpenCreate}
+          >
+            Nueva Cuenta Bancaria
+          </Button>
+        </div>
+      )}
 
       {/* Create / Edit Modal */}
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[600px] p-5 lg:p-10">
@@ -355,24 +361,23 @@ const BankAccountListTable = () => {
                   <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
                     Moneda
                   </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
-                    Estado
-                  </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
-                    Acciones
-                  </TableCell>
+                  {!isSeller && (
+                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs text-gray-500 dark:text-gray-400 font-medium">
+                      Acciones
+                    </TableCell>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {loading ? (
                   <TableRow>
-                    <td colSpan={7} className="px-5 py-8 text-center text-gray-400 text-sm">
+                    <td colSpan={isSeller ? 5 : 6} className="px-5 py-8 text-center text-gray-400 text-sm">
                       Cargando cuentas bancarias...
                     </td>
                   </TableRow>
                 ) : paginatedAccounts.length === 0 ? (
                   <TableRow>
-                    <td colSpan={7} className="px-5 py-8 text-center text-gray-400 text-sm">
+                    <td colSpan={isSeller ? 5 : 6} className="px-5 py-8 text-center text-gray-400 text-sm">
                       No hay cuentas bancarias registradas.
                     </td>
                   </TableRow>
@@ -396,37 +401,28 @@ const BankAccountListTable = () => {
                       <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">
                         {account.currency}
                       </TableCell>
-                      <TableCell className="px-4 py-3 text-start">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            account.isActive
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                          }`}
-                        >
-                          {account.isActive ? 'Activa' : 'Inactiva'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-start">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            startIcon={<PencilIcon />}
-                            onClick={() => handleOpenEdit(account)}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            startIcon={<TrashBinIcon />}
-                            onClick={() => handleRequestDelete(account)}
-                          >
-                            Eliminar
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {!isSeller && (
+                        <TableCell className="px-5 py-4 text-start">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              startIcon={<PencilIcon />}
+                              onClick={() => handleOpenEdit(account)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              startIcon={<TrashBinIcon />}
+                              onClick={() => handleRequestDelete(account)}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}

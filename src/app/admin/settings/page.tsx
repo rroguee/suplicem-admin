@@ -17,7 +17,7 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <ComponentCard
           title="Cuentas Bancarias"
-          desc="Administra las cuentas bancarias del sistema. Puedes crear, editar y eliminar cuentas."
+          desc="Cuentas bancarias autorizadas del sistema para depósitos y transferencias comerciales."
         >
           <BankAccountListTable />
         </ComponentCard>
