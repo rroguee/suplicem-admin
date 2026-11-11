@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { NotificationCard } from "../notifications/NotificationCard";
 import { useNotificationsFeed } from "@/hooks/useNotificationsFeed";
-import { Bell, CheckCheck, ShoppingCart, Truck, CheckCircle2, AlertTriangle, UserPlus } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,27 +18,6 @@ export default function NotificationDropdown() {
   function closeDropdown() {
     setIsOpen(false);
   }
-
-  const renderIcon = (type: string) => {
-    switch (type) {
-      case "order_created":
-        return <ShoppingCart className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />;
-      case "order_approved":
-        return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />;
-      case "delivery_completed":
-      case "trip_assigned":
-      case "trip_in_transit":
-        return <Truck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />;
-      case "order_risk":
-      case "order_rejected":
-        return <AlertTriangle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />;
-      case "client_assigned":
-      case "credit_approved":
-        return <UserPlus className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />;
-      default:
-        return <CheckCircle2 className="h-3.5 w-3.5 text-gray-500" />;
-    }
-  };
 
   return (
     <div className="relative">
@@ -85,37 +63,16 @@ export default function NotificationDropdown() {
           )}
         </div>
 
-        <ul className="flex flex-col flex-1 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-gray-800/60">
+        <ul className="flex flex-col flex-1 gap-1 overflow-y-auto custom-scrollbar divide-y divide-gray-100 dark:divide-gray-800/60">
           {notifications.length > 0 ? (
             notifications.slice(0, 5).map((n) => (
               <li key={n.id}>
-                <DropdownItem
-                  onItemClick={() => {
-                    markAsRead(n.id);
-                    closeDropdown();
-                  }}
-                  className={`flex gap-3 rounded-lg p-2.5 transition hover:bg-gray-50 dark:hover:bg-white/5 ${
-                    !n.isRead ? "bg-orange-50/20 dark:bg-orange-950/10" : ""
-                  }`}
-                  href={n.preview?.actionUrl || "/admin/notifications"}
-                >
-                  <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 flex-shrink-0">
-                    {renderIcon(n.type)}
-                  </span>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-800 dark:text-gray-200 leading-tight">
-                      <span className="font-bold">{n.actorName}</span>{" "}
-                      <span>{n.title}</span>
-                    </p>
-                    <p className="mt-1 flex items-center justify-between text-[11px] text-gray-400">
-                      <span>{n.timeAgo}</span>
-                      {!n.isRead && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                      )}
-                    </p>
-                  </div>
-                </DropdownItem>
+                <NotificationCard
+                  notification={n}
+                  variant="compact"
+                  onRead={markAsRead}
+                  onNavigate={closeDropdown}
+                />
               </li>
             ))
           ) : (
