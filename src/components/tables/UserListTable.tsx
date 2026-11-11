@@ -62,17 +62,39 @@ const UserListTable: React.FC = () => {
       {/* 2. Barra de Búsqueda y Filtros de Rol/Estado */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <UserSearchBar value={searchQuery} onChange={setSearchQuery} />
+          <UserSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={
+              isSeller
+                ? 'Buscar cliente por nombre, correo o cédula...'
+                : 'Buscar por nombre, correo, cédula, código comercial/chofer...'
+            }
+          />
+          {isSeller && (
+            <UserFilterChips
+              roleFilter={roleFilter}
+              onRoleChange={setRoleFilter}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              roleCounts={roleCounts}
+              statusCounts={statusCounts}
+              isSeller={isSeller}
+            />
+          )}
         </div>
 
-        <UserFilterChips
-          roleFilter={roleFilter}
-          onRoleChange={setRoleFilter}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          roleCounts={roleCounts}
-          statusCounts={statusCounts}
-        />
+        {!isSeller && (
+          <UserFilterChips
+            roleFilter={roleFilter}
+            onRoleChange={setRoleFilter}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            roleCounts={roleCounts}
+            statusCounts={statusCounts}
+            isSeller={isSeller}
+          />
+        )}
       </div>
 
       {/* 3. Tabla de Usuarios */}

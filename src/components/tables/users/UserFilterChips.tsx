@@ -31,6 +31,7 @@ interface UserFilterChipsProps {
   onStatusChange: (status: UserStatusFilter) => void;
   roleCounts: Record<string, number>;
   statusCounts: Record<string, number>;
+  isSeller?: boolean;
 }
 
 export const UserFilterChips: React.FC<UserFilterChipsProps> = ({
@@ -40,40 +41,43 @@ export const UserFilterChips: React.FC<UserFilterChipsProps> = ({
   onStatusChange,
   roleCounts,
   statusCounts,
+  isSeller = false,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-      {/* Tabs por Rol */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {ROLE_OPTIONS.map((opt) => {
-          const isActive = roleFilter === opt.id;
-          const count = roleCounts[opt.id] ?? 0;
+    <div className={`flex flex-col sm:flex-row sm:items-center ${isSeller ? 'justify-end' : 'justify-between'} gap-3 pt-1`}>
+      {/* Tabs por Rol - Solo visible para administradores */}
+      {!isSeller && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {ROLE_OPTIONS.map((opt) => {
+            const isActive = roleFilter === opt.id;
+            const count = roleCounts[opt.id] ?? 0;
 
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => onRoleChange(opt.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border ${
-                isActive
-                  ? 'bg-gray-900 text-white border-gray-900 shadow-xs dark:bg-white dark:text-gray-900 dark:border-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/60'
-              }`}
-            >
-              <span>{opt.label}</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] tabular-nums ${
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onRoleChange(opt.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border ${
                   isActive
-                    ? 'bg-white/20 text-white dark:bg-black/10 dark:text-gray-900'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-xs dark:bg-white dark:text-gray-900 dark:border-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/60'
                 }`}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span>{opt.label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] tabular-nums ${
+                    isActive
+                      ? 'bg-white/20 text-white dark:bg-black/10 dark:text-gray-900'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Segmented Control por Estado */}
       <div className="inline-flex items-center bg-gray-100/80 dark:bg-gray-800/80 p-1 rounded-lg border border-gray-200/80 dark:border-gray-700/80 shrink-0">
