@@ -15,7 +15,7 @@ interface NotificationContextValue {
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 60_000;
 const VISIBILITY_COOLDOWN_MS = 10_000;
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -29,7 +29,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     inFlightRef.current = true;
     if (isInitial) setLoading(true);
     try {
-      const data = await notificationsService.getNotifications(60);
+      const data = await notificationsService.getNotifications(20);
       setNotifications(data);
       lastFetchedAtRef.current = Date.now();
     } finally {

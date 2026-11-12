@@ -79,7 +79,7 @@ export const useAdminDashboard = () => {
     }
 
     try {
-      const res = await getDashboardSummary();
+      const res = await getDashboardSummary(force);
       if (res?.success) {
         setMetrics(res.metrics || INITIAL_METRICS);
         const nextActive = res.activeTrips || [];
@@ -124,11 +124,11 @@ export const useAdminDashboard = () => {
     const intervalId = setInterval(() => {
       if (document.visibilityState !== "visible") return;
       tickCount += 1;
-      // Con viajes en ruta refresca cada 15s; en reposo cada 30s (cada 2 ticks)
+      // Con viajes en ruta refresca cada 45s; en reposo cada 90s (cada 2 ticks)
       if (hasActiveTripsRef.current || tickCount % 2 === 0) {
-        loadData(true);
+        loadData(true, false);
       }
-    }, 15_000);
+    }, 45_000);
 
     return () => {
       clearInterval(intervalId);
@@ -152,6 +152,6 @@ export const useAdminDashboard = () => {
     topSellers,
     driversSummary,
     recentOrders,
-    reload: () => loadData(true, true),
+    reload: () => loadData(false, true),
   };
 };

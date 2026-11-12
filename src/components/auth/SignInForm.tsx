@@ -159,6 +159,8 @@ export default function SignInForm() {
               src="/images/logo/logo-suplicem-removebg-preview.png"
               alt="Suplicem Logo"
               className="mb-2"
+              priority
+              style={{ width: "auto", height: "auto" }}
             />
           </div>
 

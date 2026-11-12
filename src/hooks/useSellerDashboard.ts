@@ -43,7 +43,7 @@ export const useSellerDashboard = () => {
     }
 
     try {
-      const res = await getDashboardSummary();
+      const res = await getDashboardSummary(force);
       if (res?.success) {
         const nextActive = res.activeTrips || [];
         hasActiveTripsRef.current = nextActive.length > 0;
@@ -88,11 +88,11 @@ export const useSellerDashboard = () => {
     const intervalId = setInterval(() => {
       if (document.visibilityState !== "visible") return;
       tickCount += 1;
-      // Con viajes activos refresca cada 15s; en reposo cada 30s
+      // Con viajes activos refresca cada 45s; en reposo cada 90s
       if (hasActiveTripsRef.current || tickCount % 2 === 0) {
-        loadDashboardData(true);
+        loadDashboardData(true, false);
       }
-    }, 15_000);
+    }, 45_000);
 
     return () => {
       clearInterval(intervalId);
@@ -112,6 +112,6 @@ export const useSellerDashboard = () => {
     activeTrips,
     completedTrips,
     recentOrders,
-    reload: () => loadDashboardData(true, true),
+    reload: () => loadDashboardData(false, true),
   };
 };

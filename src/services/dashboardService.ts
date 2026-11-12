@@ -26,7 +26,9 @@ export interface DashboardSummaryResponse {
   driversSummary: any[];
 }
 
-export const getDashboardSummary = async (): Promise<DashboardSummaryResponse> => {
-  const response = await protectedApi.get("/dashboard/summary");
+export const getDashboardSummary = async (force = false): Promise<DashboardSummaryResponse> => {
+  const response = await protectedApi.get("/dashboard/summary", {
+    params: force ? { force: "true" } : {},
+  });
   return response.data;
 };
