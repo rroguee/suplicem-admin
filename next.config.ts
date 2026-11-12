@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "apexcharts", "@fullcalendar/react"],
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,

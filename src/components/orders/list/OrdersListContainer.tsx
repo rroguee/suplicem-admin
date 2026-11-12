@@ -6,12 +6,29 @@ import { useOrdersList } from './hooks/useOrdersList';
 import { OrdersListHeader } from './OrdersListHeader';
 import { OrdersFilterBar } from './OrdersFilterBar';
 import { OrdersTable } from './OrdersTable';
-import { OrderRejectModal } from './modals/OrderRejectModal';
-import { OrderDetailModal } from './modals/OrderDetailModal';
-import { ReceiptViewerModal } from '../logistics/ReceiptViewerModal';
-import { DriverSelectionModal } from '../logistics/DriverSelectionModal';
-import { OrderTripPlannerModal } from '../logistics/OrderTripPlannerModal';
+import dynamic from 'next/dynamic';
 import CustomAlert from '@/components/CustomAlert';
+
+const OrderRejectModal = dynamic(
+  () => import('./modals/OrderRejectModal').then((mod) => mod.OrderRejectModal),
+  { ssr: false }
+);
+const OrderDetailModal = dynamic(
+  () => import('./modals/OrderDetailModal').then((mod) => mod.OrderDetailModal),
+  { ssr: false }
+);
+const ReceiptViewerModal = dynamic(
+  () => import('../logistics/ReceiptViewerModal').then((mod) => mod.ReceiptViewerModal),
+  { ssr: false }
+);
+const DriverSelectionModal = dynamic(
+  () => import('../logistics/DriverSelectionModal').then((mod) => mod.DriverSelectionModal),
+  { ssr: false }
+);
+const OrderTripPlannerModal = dynamic(
+  () => import('../logistics/OrderTripPlannerModal').then((mod) => mod.OrderTripPlannerModal),
+  { ssr: false }
+);
 
 export default function OrdersListContainer() {
   const { user: authUser } = useContext(AuthContext);
