@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, Users, Check, PowerOff } from 'lucide-react';
+import { Eye, Users, Check, PowerOff, ShoppingBag } from 'lucide-react';
 import { User } from '@/services/usersService';
 
 interface UserRowActionsProps {
@@ -74,8 +74,16 @@ export const UserRowActions: React.FC<UserRowActionsProps> = ({
         )
       )}
 
-      {isSeller && (
-        <span className="text-[11px] text-gray-400 px-1">Cliente Asignado</span>
+      {user.userType === 'client' && isActive && (
+        <button
+          type="button"
+          onClick={() => router.push(`/admin/orders/create?clientId=${user.uid}`)}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/50 border border-orange-200 dark:border-orange-800 rounded-lg transition-all"
+          title="Crear Orden Asistida para este cliente"
+        >
+          <ShoppingBag className="w-3.5 h-3.5" />
+          <span>Orden Asistida</span>
+        </button>
       )}
     </div>
   );
