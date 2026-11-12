@@ -20,6 +20,7 @@ export const AssistedOrderSummaryCard: React.FC<Props> = ({ state, onSubmit }) =
     submitting,
     selectedClient,
     paymentMethod,
+    deliveryType,
     isAdmin,
   } = state;
 
@@ -68,6 +69,13 @@ export const AssistedOrderSummaryCard: React.FC<Props> = ({ state, onSubmit }) =
           <div className="flex justify-between text-gray-600 dark:text-gray-300">
             <span>Modalidad de pago:</span>
             <span className="font-medium capitalize">{paymentMethod === "credit" ? "Crédito Comercial" : "Transferencia"}</span>
+          </div>
+
+          <div className="flex justify-between text-gray-600 dark:text-gray-300">
+            <span>Modalidad de entrega:</span>
+            <span className="font-semibold">
+              {deliveryType === "almacen" ? "Retiro en Almacén" : "A Domicilio"}
+            </span>
           </div>
         </div>
 

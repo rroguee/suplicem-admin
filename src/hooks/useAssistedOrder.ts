@@ -32,6 +32,7 @@ export function useAssistedOrder(
   const [products, setProducts] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [selectedClient, setSelectedClient] = useState<User | null>(initialClient || null);
+  const [deliveryType, setDeliveryType] = useState<"domicilio" | "almacen">("domicilio");
   const [selectedAddressIndex, setSelectedAddressIndex] = useState<number>(0);
   const [isCustomAddress, setIsCustomAddress] = useState(false);
   const [customAddressData, setCustomAddressData] = useState<GooglePlaceData | null>(null);
@@ -128,38 +129,40 @@ export function useAssistedOrder(
       return { success: false, message: "Agrega al menos un producto a la orden." };
     }
 
-    let finalAddress: any = null;
+    let finalAddress: any = undefined;
 
-    if (isCustomAddress) {
-      if (!customAddressData || !customAddressData.description.trim()) {
-        return { success: false, message: "Selecciona una dirección válida de las sugerencias de Google Maps." };
+    if (deliveryType === "domicilio") {
+      if (isCustomAddress) {
+        if (!customAddressData || !customAddressData.description.trim()) {
+          return { success: false, message: "Selecciona una dirección válida de las sugerencias de Google Maps." };
+        }
+        finalAddress = {
+          description: customAddressData.description.trim(),
+          placeId: customAddressData.placeId || `manual-web-${Date.now()}`,
+          latitude: customAddressData.latitude || 18.4861,
+          longitude: customAddressData.longitude || -69.9312,
+          additionalInfo: "Dirección de obra seleccionada vía Google Maps",
+          recipientName: `${selectedClient.names} ${selectedClient.lastNames}`,
+          recipientDocument: selectedClient.identification,
+          recipientDocumentType: selectedClient.identificationType,
+        };
+      } else {
+        const addresses = selectedClient.addresses || [];
+        const clientAddress = addresses[selectedAddressIndex] || addresses[0];
+        if (!clientAddress) {
+          return { success: false, message: "El cliente no tiene dirección registrada. Agrega una nueva dirección con Google Maps." };
+        }
+        finalAddress = {
+          description: clientAddress.description,
+          placeId: clientAddress.placeId || "manual-web",
+          latitude: clientAddress.latitude || 18.4861,
+          longitude: clientAddress.longitude || -69.9312,
+          additionalInfo: clientAddress.additionalInfo || "",
+          recipientName: `${selectedClient.names} ${selectedClient.lastNames}`,
+          recipientDocument: selectedClient.identification,
+          recipientDocumentType: selectedClient.identificationType,
+        };
       }
-      finalAddress = {
-        description: customAddressData.description.trim(),
-        placeId: customAddressData.placeId || `manual-web-${Date.now()}`,
-        latitude: customAddressData.latitude || 18.4861,
-        longitude: customAddressData.longitude || -69.9312,
-        additionalInfo: "Dirección de obra seleccionada vía Google Maps",
-        recipientName: `${selectedClient.names} ${selectedClient.lastNames}`,
-        recipientDocument: selectedClient.identification,
-        recipientDocumentType: selectedClient.identificationType,
-      };
-    } else {
-      const addresses = selectedClient.addresses || [];
-      const clientAddress = addresses[selectedAddressIndex] || addresses[0];
-      if (!clientAddress) {
-        return { success: false, message: "El cliente no tiene dirección registrada. Agrega una nueva dirección con Google Maps." };
-      }
-      finalAddress = {
-        description: clientAddress.description,
-        placeId: clientAddress.placeId || "manual-web",
-        latitude: clientAddress.latitude || 18.4861,
-        longitude: clientAddress.longitude || -69.9312,
-        additionalInfo: clientAddress.additionalInfo || "",
-        recipientName: `${selectedClient.names} ${selectedClient.lastNames}`,
-        recipientDocument: selectedClient.identification,
-        recipientDocumentType: selectedClient.identificationType,
-      };
     }
 
     if (paymentMethod === "transfer" && !selectedBankAccountId) {
@@ -181,14 +184,17 @@ export function useAssistedOrder(
     const payload: CreateOrderPayload = {
       userId: selectedClient.uid,
       createdBySellerId: user?.uid,
-      deliveryType: "domicilio",
-      deliveryAddress: finalAddress,
-      deliveries: items.map((it) => ({
-        productId: it.productId,
-        quantity: it.quantity,
-        unit: it.unit || "fundas",
-        address: finalAddress,
-      })),
+      deliveryType,
+      deliveryAddress: deliveryType === "domicilio" ? finalAddress : undefined,
+      deliveries:
+        deliveryType === "domicilio"
+          ? items.map((it) => ({
+              productId: it.productId,
+              quantity: it.quantity,
+              unit: it.unit || "fundas",
+              address: finalAddress,
+            }))
+          : [],
       items: items.map((it) => ({
         productId: it.productId,
         name: it.name,
@@ -228,6 +234,8 @@ export function useAssistedOrder(
     bankAccounts,
     selectedClient,
     setSelectedClient,
+    deliveryType,
+    setDeliveryType,
     selectedAddressIndex,
     setSelectedAddressIndex,
     isCustomAddress,

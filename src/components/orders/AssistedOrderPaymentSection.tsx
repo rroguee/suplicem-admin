@@ -21,6 +21,7 @@ export const AssistedOrderPaymentSection: React.FC<Props> = ({ state }) => {
     setTransferReference,
     deliveryNotes,
     setDeliveryNotes,
+    deliveryType,
   } = state;
 
   return (
@@ -114,13 +115,19 @@ export const AssistedOrderPaymentSection: React.FC<Props> = ({ state }) => {
 
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Instrucciones de Despacho en Obra (Opcional)
+          {deliveryType === "almacen"
+            ? "Instrucciones de Retiro en Almacén (Opcional)"
+            : "Instrucciones de Despacho en Obra (Opcional)"}
         </label>
         <input
           type="text"
           value={deliveryNotes}
           onChange={(e) => setDeliveryNotes(e.target.value)}
-          placeholder="Ej. Descargar en torre B, recibir con el Ing. Pedro Castillo"
+          placeholder={
+            deliveryType === "almacen"
+              ? "Ej. Retira camión placa L123456, autorizado Ing. Pedro Castillo"
+              : "Ej. Descargar en torre B, recibir con el Ing. Pedro Castillo"
+          }
           className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-xs text-gray-800 shadow-xs focus:border-orange-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </div>

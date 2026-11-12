@@ -3,7 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { UseAssistedOrderReturn } from "@/hooks/useAssistedOrder";
-import { MapPin, PlusCircle, List, User as UserIcon } from "lucide-react";
+import { MapPin, PlusCircle, List, Truck, Store } from "lucide-react";
 
 const AddressPicker = dynamic(() => import("@/hooks/AddressPicker"), {
   ssr: false,
@@ -19,6 +19,8 @@ export const AssistedOrderClientSection: React.FC<Props> = ({ state }) => {
     clients,
     selectedClient,
     setSelectedClient,
+    deliveryType,
+    setDeliveryType,
     selectedAddressIndex,
     setSelectedAddressIndex,
     isCustomAddress,
@@ -43,7 +45,7 @@ export const AssistedOrderClientSection: React.FC<Props> = ({ state }) => {
           </h2>
         </div>
 
-        {selectedClient && (
+        {selectedClient && deliveryType === "domicilio" && (
           <button
             type="button"
             onClick={() => {
@@ -65,6 +67,38 @@ export const AssistedOrderClientSection: React.FC<Props> = ({ state }) => {
             )}
           </button>
         )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setDeliveryType("domicilio")}
+          className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-xs font-bold transition ${
+            deliveryType === "domicilio"
+              ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 shadow-xs"
+              : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300"
+          }`}
+        >
+          <Truck className="h-4 w-4" />
+          <span>Entrega a Domicilio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeliveryType("almacen");
+            setIsCustomAddress(false);
+            setCustomAddressData(null);
+          }}
+          className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-xs font-bold transition ${
+            deliveryType === "almacen"
+              ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 shadow-xs"
+              : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300"
+          }`}
+        >
+          <Store className="h-4 w-4" />
+          <span>Retiro en Almacén</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -93,7 +127,7 @@ export const AssistedOrderClientSection: React.FC<Props> = ({ state }) => {
           </select>
         </div>
 
-        {!isCustomAddress && clientAddresses.length > 1 && (
+        {deliveryType === "domicilio" && !isCustomAddress && clientAddresses.length > 1 && (
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Dirección de Obra Asignada
@@ -113,8 +147,15 @@ export const AssistedOrderClientSection: React.FC<Props> = ({ state }) => {
         )}
       </div>
 
-      {/* Autocomplete de Google Maps */}
-      {isCustomAddress ? (
+      {/* Modalidad Almacén o Autocomplete de Google Maps */}
+      {deliveryType === "almacen" ? (
+        <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+          <Store className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span className="font-medium">
+            Retiro en Almacén Central de Suplicem. No requiere dirección de obra ni asignación de flete.
+          </span>
+        </div>
+      ) : isCustomAddress ? (
         <div className="space-y-1.5 pt-1">
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
             Buscar dirección exacta en Google Maps
