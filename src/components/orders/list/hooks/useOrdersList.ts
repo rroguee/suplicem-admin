@@ -111,16 +111,12 @@ export function useOrdersList() {
     setCurrentPage(1);
   };
 
-  const fetchUsers = useCallback(async () => {
+  const fetchDrivers = useCallback(async () => {
     try {
-      const [clientsRes, driversRes] = await Promise.all([
-        getUsers({ userType: 'client' }),
-        getUsers({ userType: 'driver' }),
-      ]);
-      if (clientsRes?.success) setUsers(clientsRes.users || []);
+      const driversRes = await getUsers({ userType: 'driver', status: 'active' });
       if (driversRes?.success) setDrivers(driversRes.users || []);
     } catch (err) {
-      console.error('Error fetching users:', err);
+      console.error('Error fetching drivers:', err);
     }
   }, []);
 
@@ -180,8 +176,8 @@ export function useOrdersList() {
   }, [fetchOrders]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchDrivers();
+  }, [fetchDrivers]);
 
   const handleApproveOrder = async (order: ServiceOrder) => {
     if (order.deliveryType === 'almacen') {
