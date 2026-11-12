@@ -74,6 +74,8 @@ const AppHeader: React.FC = () => {
               className="dark:hidden"
               src="/images/logo/logo-suplicem-removebg-preview.png"
               alt="Logo"
+              priority
+              style={{ width: "auto", height: "auto" }}
             />
             <Image
               width={154}
@@ -81,6 +83,8 @@ const AppHeader: React.FC = () => {
               className="hidden dark:block"
               src="/images/logo/logo-suplicem-removebg-preview.png"
               alt="Logo"
+              priority
+              style={{ width: "auto", height: "auto" }}
             />
           </Link>
 
