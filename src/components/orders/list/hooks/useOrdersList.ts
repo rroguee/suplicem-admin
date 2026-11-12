@@ -8,6 +8,7 @@ import { TripItem } from '../../logistics/OrderTripsProgressCard';
 import { User, getUsers } from '@/services/usersService';
 import {
   getOrders,
+  approveOrder,
   rejectedOrder,
   getOrderTracking,
   completePickupOrder,
@@ -180,7 +181,24 @@ export function useOrdersList() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleApproveOrder = (order: ServiceOrder) => {
+  const handleApproveOrder = async (order: ServiceOrder) => {
+    if (order.deliveryType === 'almacen') {
+      try {
+        setLoading(true);
+        const res = await approveOrder(order.id);
+        if (res.success) {
+          showAlert({ type: 'success', title: 'Éxito', message: 'Orden de retiro en almacén aprobada.' });
+          fetchOrders();
+        } else {
+          showAlert({ type: 'error', title: 'Error', message: res.message || 'No se pudo aprobar la orden.' });
+        }
+      } catch {
+        showAlert({ type: 'error', title: 'Error', message: 'No se pudo aprobar la orden.' });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     router.push(`/admin/orders/${order.id}/approval`);
   };
 

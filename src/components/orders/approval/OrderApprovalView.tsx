@@ -40,6 +40,7 @@ export const OrderApprovalView: React.FC<Props> = ({ orderId }) => {
     );
   }
 
+  const isPickup = order.deliveryType === "almacen";
   const totalOrderTons = Number(order.totalTons || order.pendingBalance) || 0;
   const totalPlannedTons = deliveriesPlan.reduce(
     (acc, del) => acc + del.trucks.reduce((sum, t) => sum + (Number(t.totalTons) || 0), 0),
@@ -62,7 +63,9 @@ export const OrderApprovalView: React.FC<Props> = ({ orderId }) => {
             Aprobación y Despacho Logístico
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Verifica la orden y fracciona la carga de cada destino en viajes para los conductores
+            {isPickup
+              ? "Verifica la orden de retiro en almacén antes de aprobarla"
+              : "Verifica la orden y fracciona la carga de cada destino en viajes para los conductores"}
           </p>
         </div>
       </div>
@@ -84,32 +87,35 @@ export const OrderApprovalView: React.FC<Props> = ({ orderId }) => {
         onViewReceipt={() => setIsReceiptModalOpen(true)}
       />
 
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-          Planificación de Entregas y Camiones
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Ajusta el tonelaje de cada camión y asigna el chofer correspondiente para cada destino:
-        </p>
+      {!isPickup && (
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            Planificación de Entregas y Camiones
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Ajusta el tonelaje de cada camión y asigna el chofer correspondiente para cada destino:
+          </p>
 
-        {deliveriesPlan.map((del, idx) => (
-          <DeliveryApprovalCard
-            key={del.id || `plan-del-${idx}`}
-            delivery={del}
-            drivers={drivers}
-            onAddTruck={() => handleAddTruck(idx)}
-            onUpdateTruckTons={(truckId, tons) => handleUpdateTruckTons(idx, truckId, tons)}
-            onSelectDriver={(truckId, driverId) => handleSelectDriver(idx, truckId, driverId)}
-            onRemoveTruck={(truckId) => handleRemoveTruck(idx, truckId)}
-          />
-        ))}
-      </div>
+          {deliveriesPlan.map((del, idx) => (
+            <DeliveryApprovalCard
+              key={del.id || `plan-del-${idx}`}
+              delivery={del}
+              drivers={drivers}
+              onAddTruck={() => handleAddTruck(idx)}
+              onUpdateTruckTons={(truckId, tons) => handleUpdateTruckTons(idx, truckId, tons)}
+              onSelectDriver={(truckId, driverId) => handleSelectDriver(idx, truckId, driverId)}
+              onRemoveTruck={(truckId) => handleRemoveTruck(idx, truckId)}
+            />
+          ))}
+        </div>
+      )}
 
       <OrderApprovalSummaryFooter
         totalOrderTons={totalOrderTons}
         totalPlannedTons={totalPlannedTons}
         onConfirm={handleConfirmApproval}
         saving={saving}
+        isPickup={isPickup}
       />
 
       {isReceiptModalOpen && (

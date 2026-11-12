@@ -157,32 +157,44 @@ export function useOrderApproval(orderId: string) {
     if (!order) return;
     setErrorMessage(null);
 
-    for (const del of deliveriesPlan) {
-      const planned = del.trucks.reduce((sum, t) => sum + (Number(t.totalTons) || 0), 0);
-      if (Math.abs(planned - del.totalTons) > 0.1) {
-        setErrorMessage(
-          `La Entrega #${del.index + 1} tiene ${planned.toFixed(2)} t planificadas pero requiere ${del.totalTons.toFixed(2)} t. Por favor equilibra los camiones.`
-        );
-        return;
+    const isPickup = order.deliveryType === "almacen";
+
+    if (!isPickup) {
+      for (const del of deliveriesPlan) {
+        const planned = del.trucks.reduce((sum, t) => sum + (Number(t.totalTons) || 0), 0);
+        if (Math.abs(planned - del.totalTons) > 0.1) {
+          setErrorMessage(
+            `La Entrega #${del.index + 1} tiene ${planned.toFixed(2)} t planificadas pero requiere ${del.totalTons.toFixed(2)} t. Por favor equilibra los camiones.`
+          );
+          return;
+        }
       }
     }
 
-    const allTrips = deliveriesPlan.flatMap((del) =>
-      del.trucks.map((truck, tIdx) => ({
-        totalTons: Number(truck.totalTons.toFixed(2)),
-        driverId: truck.driverId,
-        deliveryId: del.id,
-        destinationAddress: del.destinationAddress,
-        comments: `Viaje Camión #${tIdx + 1} para Entrega #${del.index + 1} (${del.addressDescription})`,
-      }))
-    );
+    const allTrips = isPickup
+      ? []
+      : deliveriesPlan.flatMap((del) =>
+          del.trucks.map((truck, tIdx) => ({
+            totalTons: Number(truck.totalTons.toFixed(2)),
+            driverId: truck.driverId,
+            deliveryId: del.id,
+            destinationAddress: del.destinationAddress,
+            comments: `Viaje Camión #${tIdx + 1} para Entrega #${del.index + 1} (${del.addressDescription})`,
+          }))
+        );
 
     try {
       setSaving(true);
       await approveOrder(order.id);
-      await splitOrderTrips(order.id, allTrips);
+      if (!isPickup) {
+        await splitOrderTrips(order.id, allTrips);
+      }
 
-      setSuccessMessage("¡Orden aprobada y viajes de camiones generados exitosamente!");
+      setSuccessMessage(
+        isPickup
+          ? "¡Orden de retiro en almacén aprobada exitosamente!"
+          : "¡Orden aprobada y viajes de camiones generados exitosamente!"
+      );
       setTimeout(() => {
         router.push("/admin");
       }, 1500);

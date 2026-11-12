@@ -5,6 +5,7 @@ interface Props {
   totalPlannedTons: number;
   onConfirm: () => void;
   saving?: boolean;
+  isPickup?: boolean;
 }
 
 export const OrderApprovalSummaryFooter: React.FC<Props> = ({
@@ -12,8 +13,9 @@ export const OrderApprovalSummaryFooter: React.FC<Props> = ({
   totalPlannedTons,
   onConfirm,
   saving = false,
+  isPickup = false,
 }) => {
-  const isExceeded = totalPlannedTons > totalOrderTons + 0.01;
+  const isExceeded = !isPickup && totalPlannedTons > totalOrderTons + 0.01;
   const isComplete = Math.abs(totalPlannedTons - totalOrderTons) <= 0.01;
 
   const statusTextColor = isExceeded
@@ -28,10 +30,12 @@ export const OrderApprovalSummaryFooter: React.FC<Props> = ({
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Total Orden: <strong className="text-gray-900 dark:text-white">{totalOrderTons.toFixed(2)} t</strong>
         </p>
-        <p className={`text-base font-bold ${statusTextColor}`}>
-          Total en Camiones: {totalPlannedTons.toFixed(2)} t
-          {isExceeded && ` (Excede por ${(totalPlannedTons - totalOrderTons).toFixed(2)} t)`}
-        </p>
+        {!isPickup && (
+          <p className={`text-base font-bold ${statusTextColor}`}>
+            Total en Camiones: {totalPlannedTons.toFixed(2)} t
+            {isExceeded && ` (Excede por ${(totalPlannedTons - totalOrderTons).toFixed(2)} t)`}
+          </p>
+        )}
       </div>
 
       <button
@@ -40,7 +44,11 @@ export const OrderApprovalSummaryFooter: React.FC<Props> = ({
         onClick={onConfirm}
         className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {saving ? "Procesando Aprobación..." : "✓ Confirmar Aprobación y Generar Viajes"}
+        {saving
+          ? "Procesando Aprobación..."
+          : isPickup
+          ? "✓ Confirmar Aprobación (Retiro en Almacén)"
+          : "✓ Confirmar Aprobación y Generar Viajes"}
       </button>
     </div>
   );
