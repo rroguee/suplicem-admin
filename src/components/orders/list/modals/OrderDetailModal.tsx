@@ -173,24 +173,26 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           />
         </div>
 
-        {/* Mapa de Ubicación */}
-        <div className="mb-4">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Ubicación de Despacho</h3>
-          <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-            <TripMap
-              driverLocation={orderTracking?.location ? { lat: orderTracking.location.latitude, lng: orderTracking.location.longitude } : null}
-              driverInfo={orderTracking?.driver}
-              deliveries={selectedOrder.deliveries?.map((d) => ({
-                address: d.address,
-                userId: selectedOrder.userId,
-                userNames: selectedOrder.userNames,
-                userLastNames: selectedOrder.userLastNames,
-                userPhone: '',
-              })) || []}
-              height="260px"
-            />
+        {/* Mapa de Ubicación (solo para entregas a domicilio) */}
+        {selectedOrder.deliveryType !== 'almacen' && (
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Ubicación de Despacho</h3>
+            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              <TripMap
+                driverLocation={orderTracking?.location ? { lat: orderTracking.location.latitude, lng: orderTracking.location.longitude } : null}
+                driverInfo={orderTracking?.driver}
+                deliveries={selectedOrder.deliveries?.map((d) => ({
+                  address: d.address,
+                  userId: selectedOrder.userId,
+                  userNames: selectedOrder.userNames,
+                  userLastNames: selectedOrder.userLastNames,
+                  userPhone: '',
+                })) || []}
+                height="260px"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Modal>
   );
