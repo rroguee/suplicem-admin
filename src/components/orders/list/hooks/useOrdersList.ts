@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ServiceOrder, EditableDelivery, AlertConfig } from '../types';
 import { FilterStatus } from '../../logistics/OrderFilterChips';
 import { TripItem } from '../../logistics/OrderTripsProgressCard';
@@ -20,12 +20,14 @@ const ITEMS_PER_PAGE = 7;
 
 export function useOrdersList() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('Todos');
 
   const [users, setUsers] = useState<User[]>([]);

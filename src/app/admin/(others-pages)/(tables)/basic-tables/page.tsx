@@ -1,6 +1,6 @@
 import OrderListTable from "@/components/tables/OrderListTable";
 import { Metadata } from "next";
-import React from "react";
+import React, { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Gestión de Órdenes | Suplicem Admin",
@@ -11,7 +11,9 @@ export const metadata: Metadata = {
 export default function OrderListPage() {
   return (
     <div className="space-y-4">
-      <OrderListTable />
+      <Suspense fallback={null}>
+        <OrderListTable />
+      </Suspense>
     </div>
   );
 }
