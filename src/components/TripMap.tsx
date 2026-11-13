@@ -64,6 +64,7 @@ const TripMap: React.FC<TripMapProps> = ({
   const hasAnyPoints = Boolean(driverLocation || validDeliveries.length > 0);
 
   const originCoords = driverLocation || WAREHOUSE_LOCATION;
+  const [initialCenter] = useState(originCoords);
   const destCoords = firstValidDelivery
     ? {
         lat: Number(firstValidDelivery.address.latitude),
@@ -108,9 +109,6 @@ const TripMap: React.FC<TripMapProps> = ({
       </div>
     );
   }
-
-  // Centro inicial estable para que el usuario mantenga el control total del encuadre y zoom
-  const [initialCenter] = useState(originCoords);
 
   const handleDeliveryClick = (delivery: any) => {
     const name = delivery.userNames || delivery.userLastNames
