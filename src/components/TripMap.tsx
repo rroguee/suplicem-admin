@@ -109,7 +109,8 @@ const TripMap: React.FC<TripMapProps> = ({
     );
   }
 
-  const center = originCoords;
+  // Centro inicial estable para que el usuario mantenga el control total del encuadre y zoom
+  const [initialCenter] = useState(originCoords);
 
   const handleDeliveryClick = (delivery: any) => {
     const name = delivery.userNames || delivery.userLastNames
@@ -159,7 +160,7 @@ const TripMap: React.FC<TripMapProps> = ({
 
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={center}
+        center={initialCenter}
         zoom={13}
         onLoad={(map) => {
           mapRef.current = map;

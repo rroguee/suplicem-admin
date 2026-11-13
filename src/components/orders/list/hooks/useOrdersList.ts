@@ -127,7 +127,22 @@ export function useOrdersList() {
   const fetchOrderTrackingData = useCallback(async (orderId: string) => {
     try {
       const res = await getOrderTracking(orderId);
-      if (res?.success) setOrderTracking(res.tracking || res);
+      if (res?.success) {
+        const nextTracking = res.tracking || res;
+        setOrderTracking((prev: any) => {
+          const prevLoc = prev?.tracking?.location || prev?.location;
+          const nextLoc = nextTracking?.tracking?.location || nextTracking?.location;
+          if (
+            prevLoc &&
+            nextLoc &&
+            Number(prevLoc.latitude || prevLoc.lat) === Number(nextLoc.latitude || nextLoc.lat) &&
+            Number(prevLoc.longitude || prevLoc.lng) === Number(nextLoc.longitude || nextLoc.lng)
+          ) {
+            return prev;
+          }
+          return nextTracking;
+        });
+      }
     } catch (err) {
       console.error('Error fetching order tracking:', err);
     }

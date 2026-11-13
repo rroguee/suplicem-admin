@@ -49,12 +49,6 @@ export const useTripRoute = ({ originCoords, destCoords, mapRef }: UseTripRouteP
             }));
             setRoutePoints(mappedPoints);
             setRoadEstimate({ formattedDuration, formattedDistance });
-
-            if (mapRef.current && window.google?.maps) {
-              const bounds = new window.google.maps.LatLngBounds();
-              mappedPoints.forEach((pt) => bounds.extend(pt));
-              mapRef.current.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
-            }
           }
         }
       } catch (error) {
