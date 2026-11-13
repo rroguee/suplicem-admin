@@ -22,7 +22,7 @@ export const useTripRoute = ({ originCoords, destCoords, mapRef }: UseTripRouteP
   const [roadEstimate, setRoadEstimate] = useState<RoadEstimate | null>(null);
 
   useEffect(() => {
-    if (!destCoords) {
+    if (!destCoords || !destCoords.lat || !destCoords.lng || !originCoords || !originCoords.lat || !originCoords.lng) {
       setRoutePoints([]);
       setRoadEstimate(null);
       return;

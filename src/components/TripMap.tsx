@@ -55,6 +55,25 @@ const TripMap: React.FC<TripMapProps> = ({
   const [deliveryInfoWindow, setDeliveryInfoWindow] = useState<DeliveryDetails | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
+  // Filtrar entregas válidas con coordenadas lat/lng
+  const validDeliveries = deliveries?.filter(
+    (d) => d?.address?.latitude && d?.address?.longitude
+  ) || [];
+
+  const firstValidDelivery = validDeliveries[0];
+  const hasAnyPoints = Boolean(driverLocation || validDeliveries.length > 0);
+
+  const originCoords = driverLocation || WAREHOUSE_LOCATION;
+  const destCoords = firstValidDelivery
+    ? {
+        lat: Number(firstValidDelivery.address.latitude),
+        lng: Number(firstValidDelivery.address.longitude),
+      }
+    : null;
+
+  const estimate = destCoords ? calculateTripEstimate(originCoords, destCoords) : null;
+  const { routeCoordinates, roadEstimate } = useTripRoute({ originCoords, destCoords, mapRef });
+
   if (loadError) {
     return (
       <div
@@ -77,15 +96,6 @@ const TripMap: React.FC<TripMapProps> = ({
     );
   }
 
-  // Filtrar entregas válidas con coordenadas lat/lng
-  const validDeliveries = deliveries?.filter(
-    (d) => d?.address?.latitude && d?.address?.longitude
-  ) || [];
-
-  const firstValidDelivery = validDeliveries[0];
-
-  const hasAnyPoints = Boolean(driverLocation || validDeliveries.length > 0);
-
   if (!hasAnyPoints) {
     return (
       <div
@@ -98,17 +108,6 @@ const TripMap: React.FC<TripMapProps> = ({
       </div>
     );
   }
-
-  const originCoords = driverLocation || WAREHOUSE_LOCATION;
-  const destCoords = firstValidDelivery
-    ? {
-        lat: Number(firstValidDelivery.address.latitude),
-        lng: Number(firstValidDelivery.address.longitude),
-      }
-    : null;
-
-  const estimate = destCoords ? calculateTripEstimate(originCoords, destCoords) : null;
-  const { routeCoordinates, roadEstimate } = useTripRoute({ originCoords, destCoords, mapRef });
 
   const center = originCoords;
 
