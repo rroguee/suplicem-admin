@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { GoogleMap, Marker, InfoWindow, Polyline, useLoadScript } from '@react-google-maps/api';
 import { calculateTripEstimate, WAREHOUSE_LOCATION } from '@/utils/tripEstimate';
+import { useTripRoute } from '@/hooks/useTripRoute';
 
 const defaultContainerStyle = {
   width: '100%',
@@ -52,6 +53,7 @@ const TripMap: React.FC<TripMapProps> = ({
 
   const [driverInfoWindowOpen, setDriverInfoWindowOpen] = useState(false);
   const [deliveryInfoWindow, setDeliveryInfoWindow] = useState<DeliveryDetails | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   if (loadError) {
     return (
@@ -106,6 +108,7 @@ const TripMap: React.FC<TripMapProps> = ({
     : null;
 
   const estimate = destCoords ? calculateTripEstimate(originCoords, destCoords) : null;
+  const { routeCoordinates, roadEstimate } = useTripRoute({ originCoords, destCoords, mapRef });
 
   const center = originCoords;
 
@@ -147,13 +150,22 @@ const TripMap: React.FC<TripMapProps> = ({
               {firstValidDelivery?.address?.description || 'Destino del cliente'}
             </span>
           </div>
-          <div className="font-bold text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 px-2.5 py-1 rounded border border-red-200 dark:border-red-900 shadow-sm">
-            {estimate.formattedText}
+          <div className="font-bold text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 px-2.5 py-1 rounded border border-blue-200 dark:border-blue-900 shadow-sm">
+            {roadEstimate
+              ? `⏱️ ${roadEstimate.formattedDuration} (${roadEstimate.formattedDistance})`
+              : estimate.formattedText}
           </div>
         </div>
       )}
 
-      <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={13}>
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={center}
+        zoom={13}
+        onLoad={(map) => {
+          mapRef.current = map;
+        }}
+      >
         {/* Marcador de Partida / Conductor o Almacén */}
         {driverLocation ? (
           <Marker
@@ -206,16 +218,28 @@ const TripMap: React.FC<TripMapProps> = ({
           />
         ))}
 
-        {/* Línea de ruta entre Partida y Llegada */}
-        {destCoords && (
-          <Polyline
-            path={[originCoords, destCoords]}
-            options={{
-              strokeColor: '#E31E24',
-              strokeOpacity: 0.8,
-              strokeWeight: 4,
-            }}
-          />
+        {/* Trazo Vial Estilo Uber / PedidosYa */}
+        {routeCoordinates.length > 0 && (
+          <>
+            {/* Capa 1: Sombra / Borde exterior para contraste nítido */}
+            <Polyline
+              path={routeCoordinates}
+              options={{
+                strokeColor: '#1E3A8A',
+                strokeOpacity: 0.35,
+                strokeWeight: 7,
+              }}
+            />
+            {/* Capa 2: Línea central activa de alta visibilidad */}
+            <Polyline
+              path={routeCoordinates}
+              options={{
+                strokeColor: '#2563EB',
+                strokeOpacity: 0.95,
+                strokeWeight: 4,
+              }}
+            />
+          </>
         )}
 
         {/* InfoWindow de la Entrega */}
