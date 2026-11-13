@@ -27,7 +27,7 @@ export const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-xl">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl">
-        <div className="flex justify-between items-center mb-4 border-b pb-3 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-4 border-b pb-3 pr-10 dark:border-gray-700">
           <div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Asignar Conductor</h3>
             {targetTons !== undefined && (
@@ -36,9 +36,6 @@ export const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold">
-            ✕
-          </button>
         </div>
 
         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">

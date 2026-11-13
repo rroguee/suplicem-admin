@@ -8,6 +8,7 @@ import { ServiceOrder, EditableDelivery } from '../types';
 import { User } from '@/services/usersService';
 import { OrderTripsProgressCard, TripItem } from '../../logistics/OrderTripsProgressCard';
 import { formatRD } from '@/utils/currencyUtils';
+import { OrderDeliveriesEditSection } from './OrderDeliveriesEditSection';
 
 const TripMap = dynamic(() => import('@/components/TripMap'), {
   ssr: false,
@@ -26,11 +27,10 @@ interface OrderDetailModalProps {
   editedDeliveryType: string;
   setEditedDeliveryType: (val: string) => void;
   editedDeliveries: EditableDelivery[];
-  onUpdateDelivery: (id: string, updates: Partial<EditableDelivery>) => void;
-  onAddDelivery: () => void;
-  onRemoveDelivery: (id: string) => void;
+  onUpdateDeliveryAddress: (address: any) => void;
   onOpenAddAddressModal: () => void;
   onSaveDetails: () => void;
+  onCancelDetails?: () => void;
   onEdit: () => void;
   orderTracking: any;
   onOpenReceipt: (url: string, num: number | string) => void;
@@ -52,11 +52,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   editedDeliveryType,
   setEditedDeliveryType,
   editedDeliveries,
-  onUpdateDelivery,
-  onAddDelivery,
-  onRemoveDelivery,
+  onUpdateDeliveryAddress,
   onOpenAddAddressModal,
   onSaveDetails,
+  onCancelDetails,
   onEdit,
   orderTracking,
   onOpenReceipt,
@@ -70,23 +69,27 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const calculateTotal = (items: ServiceOrder['items']) =>
     (items || []).reduce((acc, item) => acc + (item.subtotal || 0), 0);
 
+  const effectiveDeliveryType = isEditingDetails
+    ? (editedDeliveryType || selectedOrder.deliveryType)
+    : selectedOrder.deliveryType;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg max-h-[85vh] overflow-y-auto">
-        {/* Encabezado del Detalle */}
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-h-[85vh] flex flex-col overflow-hidden">
+        {/* Encabezado fijo siempre visible con botones Guardar / Cancelar */}
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4 shrink-0 bg-white dark:bg-gray-800 z-10">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Detalle de Orden #{selectedOrder.orderNumber}
             </h2>
             <p className="text-xs text-gray-500">ID: {selectedOrder.id}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 mr-12 sm:mr-14">
             {!isSeller && (
               isEditingDetails ? (
                 <>
-                  <Button onClick={onSaveDetails} variant="primary" size="sm">Guardar</Button>
-                  <Button onClick={() => setIsEditingDetails(false)} variant="outline" size="sm">Cancelar</Button>
+                  <Button onClick={onSaveDetails} variant="primary" size="sm" disabled={loading}>Guardar</Button>
+                  <Button onClick={onCancelDetails || (() => setIsEditingDetails(false))} variant="outline" size="sm" disabled={loading}>Cancelar</Button>
                 </>
               ) : (
                 <Button onClick={onEdit} variant="primary" size="sm">Editar</Button>
@@ -94,6 +97,9 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             )}
           </div>
         </div>
+
+        {/* Cuerpo scrolleable */}
+        <div className="p-6 overflow-y-auto flex-1">
 
         {/* Alerta de Riesgo IA */}
         {selectedOrder.aiRiskFlag && (
@@ -119,7 +125,42 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </a>
               ) : 'No disponible'}
             </p>
-            <p><span className="font-semibold">Tipo Entrega:</span> <span className="capitalize">{selectedOrder.deliveryType}</span></p>
+            {isEditingDetails ? (
+              <div className="pt-1">
+                <span className="font-semibold block mb-1">Tipo Entrega:</span>
+                <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-100 dark:bg-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => setEditedDeliveryType('domicilio')}
+                    className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+                      effectiveDeliveryType === 'domicilio'
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                    }`}
+                  >
+                    🚚 Domicilio
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditedDeliveryType('almacen')}
+                    className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+                      effectiveDeliveryType === 'almacen'
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                    }`}
+                  >
+                    🏬 Almacén
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p>
+                <span className="font-semibold">Tipo Entrega:</span>{' '}
+                <span className="capitalize font-medium">
+                  {selectedOrder.deliveryType === 'almacen' ? '🏬 Retiro en Almacén' : '🚚 A Domicilio'}
+                </span>
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700">
@@ -157,11 +198,21 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           </ul>
         </div>
 
+        {/* Dirección de Entrega (solo si es a domicilio) */}
+        {effectiveDeliveryType === 'domicilio' && (
+          <OrderDeliveriesEditSection
+            deliveries={editedDeliveries}
+            isEditing={isEditingDetails}
+            onUpdateDeliveryAddress={onUpdateDeliveryAddress}
+            onOpenAddAddressModal={onOpenAddAddressModal}
+          />
+        )}
+
         {/* Tarjeta de Progreso de Viajes */}
         <div className="mb-5">
           <OrderTripsProgressCard
             orderStatus={selectedOrder.status}
-            deliveryType={selectedOrder.deliveryType}
+            deliveryType={effectiveDeliveryType}
             totalTons={Number(selectedOrder.totalTons || selectedOrder.pendingBalance) || calculateTotal(selectedOrder.items) / 500}
             deliveredTons={Number(selectedOrder.deliveredTons) || 0}
             trips={orderTrips}
@@ -170,11 +221,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             onAssignDriver={onAssignDriver}
             onCompletePickup={onCompletePickup}
             isProcessing={loading}
+            isEditing={isEditingDetails}
           />
         </div>
 
         {/* Mapa de Ubicación (solo para entregas a domicilio) */}
-        {selectedOrder.deliveryType !== 'almacen' && (() => {
+        {effectiveDeliveryType !== 'almacen' && (() => {
           const trackingInfo = orderTracking?.tracking || orderTracking;
           const loc = trackingInfo?.location;
           const currentDriverLoc = loc?.latitude && loc?.longitude
@@ -203,6 +255,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
           );
         })()}
+        </div>
       </div>
     </Modal>
   );

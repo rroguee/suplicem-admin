@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Modal } from '@/components/ui/modal';
-import { ExternalLink, X } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 
 interface Props {
   imageUrl: string | null;
@@ -18,7 +18,7 @@ export const UserVerificationImageModal: React.FC<Props> = ({ imageUrl, onClose 
         <h3 className="text-sm font-bold text-gray-900 dark:text-white">
           Documento de Identificación Adjunto
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mr-10 sm:mr-12">
           <a
             href={imageUrl}
             target="_blank"
@@ -28,13 +28,6 @@ export const UserVerificationImageModal: React.FC<Props> = ({ imageUrl, onClose 
             <ExternalLink className="h-3.5 w-3.5" />
             <span>Abrir original</span>
           </a>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </div>
       </div>
       <div className="mt-4 flex items-center justify-center overflow-hidden rounded-xl bg-gray-900/90 p-2 min-h-[350px]">

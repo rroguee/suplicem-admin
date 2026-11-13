@@ -104,16 +104,13 @@ export const OrderTripPlannerModal: React.FC<OrderTripPlannerModalProps> = ({
     <>
       <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-h-[85vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4 border-b pb-3 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-4 border-b pb-3 pr-10 dark:border-gray-700">
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Planificar y Fraccionar Viajes</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Total orden: <span className="font-semibold text-blue-600 dark:text-blue-400">{orderTotalTons.toFixed(2)} toneladas</span>
             </p>
           </div>
-          <button onClick={onClose} disabled={isSaving} className="text-gray-400 hover:text-gray-600 text-xl font-bold">
-            ✕
-          </button>
         </div>
 
         {/* Selector de número de camiones */}

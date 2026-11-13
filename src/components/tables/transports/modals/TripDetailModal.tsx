@@ -56,9 +56,11 @@ export const TripDetailModal: React.FC<TripDetailModalProps> = ({
           <p className="text-xs text-gray-400 mt-0.5">ID: {trip?.id}</p>
         </div>
         {trip?.status && (
-          <Badge size="md" color={trip.status === 'completed' ? 'success' : trip.status === 'available' ? 'warning' : 'primary'}>
-            {trip.status}
-          </Badge>
+          <div className="mr-12 sm:mr-14">
+            <Badge size="md" color={trip.status === 'completed' ? 'success' : trip.status === 'available' ? 'warning' : 'primary'}>
+              {trip.status}
+            </Badge>
+          </div>
         )}
       </div>
 

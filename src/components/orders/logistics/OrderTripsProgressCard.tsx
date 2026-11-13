@@ -24,7 +24,27 @@ interface OrderTripsProgressCardProps {
   onAssignDriver: (trip: TripItem) => void;
   onCompletePickup: () => void;
   isProcessing?: boolean;
+  isEditing?: boolean;
 }
+
+const getTripStatusBadge = (status?: string) => {
+  switch (status) {
+    case 'assigned':
+      return { label: 'Asignado', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' };
+    case 'accepted':
+      return { label: 'Aceptado', cls: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200' };
+    case 'started':
+    case 'in_progress':
+      return { label: 'En Camino', cls: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' };
+    case 'completed':
+      return { label: 'Entregado', cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' };
+    case 'canceled':
+      return { label: 'Cancelado', cls: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' };
+    case 'available':
+    default:
+      return { label: 'Disponible', cls: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' };
+  }
+};
 
 export const OrderTripsProgressCard: React.FC<OrderTripsProgressCardProps> = ({
   orderStatus,
@@ -37,6 +57,7 @@ export const OrderTripsProgressCard: React.FC<OrderTripsProgressCardProps> = ({
   onAssignDriver,
   onCompletePickup,
   isProcessing = false,
+  isEditing = false,
 }) => {
   const isPickup = deliveryType === 'almacen';
 
@@ -46,7 +67,7 @@ export const OrderTripsProgressCard: React.FC<OrderTripsProgressCardProps> = ({
         <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
           📦 Control Logístico de la Orden
         </h3>
-        {!isPickup && orderStatus === 'approved' && (
+        {!isPickup && orderStatus === 'approved' && isEditing && (
           <Button variant="outline" size="sm" onClick={onOpenPlanner} disabled={isProcessing}>
             🔄 Replanificar / Fraccionar Viajes
           </Button>
@@ -104,12 +125,19 @@ export const OrderTripsProgressCard: React.FC<OrderTripsProgressCardProps> = ({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-xs font-semibold capitalize bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                    {t.status}
-                  </span>
-                  <Button variant="outline" size="sm" onClick={() => onAssignDriver(t)} disabled={isProcessing}>
-                    {driver ? 'Cambiar Chofer' : 'Asignar Chofer'}
-                  </Button>
+                  {(() => {
+                    const badge = getTripStatusBadge(t.status);
+                    return (
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
+                  {isEditing && (
+                    <Button variant="outline" size="sm" onClick={() => onAssignDriver(t)} disabled={isProcessing}>
+                      {driver ? 'Cambiar Chofer' : 'Asignar Chofer'}
+                    </Button>
+                  )}
                 </div>
               </div>
             );

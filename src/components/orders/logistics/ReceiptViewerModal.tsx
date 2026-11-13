@@ -22,16 +22,10 @@ export const ReceiptViewerModal: React.FC<ReceiptViewerModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl">
-        <div className="flex justify-between items-center mb-4 border-b pb-3 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-4 border-b pb-3 pr-10 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">
             Comprobante de Pago — Orden #{orderNumber || 'N/A'}
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold"
-          >
-            ✕
-          </button>
         </div>
 
         <div className="flex flex-col items-center justify-center min-h-[300px] max-h-[70vh] overflow-auto bg-gray-50 dark:bg-gray-900 rounded-lg p-2">

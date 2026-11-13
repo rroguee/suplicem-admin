@@ -17,6 +17,10 @@ const OrderDetailModal = dynamic(
   () => import('./modals/OrderDetailModal').then((mod) => mod.OrderDetailModal),
   { ssr: false }
 );
+const OrderAddAddressModal = dynamic(
+  () => import('./modals/OrderAddAddressModal').then((mod) => mod.OrderAddAddressModal),
+  { ssr: false }
+);
 const ReceiptViewerModal = dynamic(
   () => import('../logistics/ReceiptViewerModal').then((mod) => mod.ReceiptViewerModal),
   { ssr: false }
@@ -106,11 +110,10 @@ export default function OrdersListContainer() {
         editedDeliveryType={list.editedDeliveryType}
         setEditedDeliveryType={list.setEditedDeliveryType}
         editedDeliveries={list.editedDeliveries}
-        onUpdateDelivery={() => {}}
-        onAddDelivery={() => {}}
-        onRemoveDelivery={() => {}}
+        onUpdateDeliveryAddress={list.handleUpdateDeliveryAddress}
         onOpenAddAddressModal={() => list.setIsAddingNewAddress(true)}
-        onSaveDetails={() => {}}
+        onSaveDetails={list.handleSaveOrderDetails}
+        onCancelDetails={list.handleCancelEditing}
         onEdit={() => list.setIsEditingDetails(true)}
         orderTracking={list.orderTracking}
         onOpenReceipt={list.handleOpenReceipt}
@@ -150,6 +153,16 @@ export default function OrdersListContainer() {
           drivers={list.drivers}
           onConfirmPlan={list.handleConfirmPlan}
           isSaving={list.loading}
+        />
+      )}
+
+      {list.isAddingNewAddress && (
+        <OrderAddAddressModal
+          isOpen={list.isAddingNewAddress}
+          onClose={() => list.setIsAddingNewAddress(false)}
+          data={list.newAddressData}
+          onChange={list.setNewAddressData}
+          onSubmit={list.handleSaveNewAddressSubmit}
         />
       )}
 
