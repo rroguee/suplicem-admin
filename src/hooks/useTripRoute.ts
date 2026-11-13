@@ -70,9 +70,9 @@ export const useTripRoute = ({ originCoords, destCoords, mapRef }: UseTripRouteP
   }, [originCoords.lat, originCoords.lng, destCoords?.lat, destCoords?.lng, mapRef]);
 
   const routeCoordinates = useMemo(() => {
-    if (routePoints.length > 0) return routePoints;
-    return destCoords ? [originCoords, destCoords] : [];
-  }, [routePoints, originCoords, destCoords]);
+    // Retornar únicamente los puntos de la ruta vial por calles una vez calculada
+    return routePoints;
+  }, [routePoints]);
 
   return { routeCoordinates, roadEstimate };
 };
