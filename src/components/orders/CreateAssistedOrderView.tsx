@@ -8,11 +8,14 @@ import { AssistedOrderClientSection } from "./AssistedOrderClientSection";
 import { AssistedOrderProductsSection } from "./AssistedOrderProductsSection";
 import { AssistedOrderPaymentSection } from "./AssistedOrderPaymentSection";
 import { AssistedOrderSummaryCard } from "./AssistedOrderSummaryCard";
+import { useCustomAlert } from "@/hooks/useCustomAlert";
+import CustomAlert from "@/components/CustomAlert";
 
 export const CreateAssistedOrderView: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialClientId = searchParams?.get("clientId") || null;
+  const { alertConfig, showSuccess, showError, closeAlert } = useCustomAlert();
 
   const orderState = useAssistedOrder(null, () => {
     router.push("/admin");
@@ -21,8 +24,17 @@ export const CreateAssistedOrderView: React.FC = () => {
   const handleSend = async () => {
     const res = await orderState.submitAssistedOrder();
     if (res.success) {
-      alert(`¡Pedido asistido creado con éxito! Orden #${res.orderNumber}`);
-      router.push("/admin");
+      showSuccess({
+        title: "¡Pedido asistido creado con éxito!",
+        message: `Orden #${res.orderNumber} registrada y procesada correctamente.`,
+        confirmText: "Ir al panel",
+        onConfirm: () => router.push("/admin"),
+      });
+    } else {
+      showError({
+        title: "No se pudo crear el pedido",
+        message: res.message || "Por favor verifica los productos y condiciones de la orden.",
+      });
     }
   };
 
@@ -92,6 +104,8 @@ export const CreateAssistedOrderView: React.FC = () => {
           <AssistedOrderSummaryCard state={orderState} onSubmit={handleSend} />
         </div>
       </div>
+
+      <CustomAlert {...alertConfig} onClose={closeAlert} />
     </div>
   );
 };

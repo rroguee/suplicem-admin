@@ -67,11 +67,4 @@ export interface EditableDelivery {
   availableAddresses: Address[];
 }
 
-export interface AlertConfig {
-  isOpen: boolean;
-  type: 'success' | 'error' | 'confirm' | 'info';
-  title: string;
-  message: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}
+export type { AlertConfig } from '@/components/CustomAlert';

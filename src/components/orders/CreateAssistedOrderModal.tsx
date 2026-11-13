@@ -13,6 +13,8 @@ const AddressPicker = dynamic(() => import("@/hooks/AddressPicker"), {
 });
 import { User } from "@/services/usersService";
 import { ShoppingCart, Plus, Minus, MapPin, AlertCircle, PlusCircle, List, X } from "lucide-react";
+import { useCustomAlert } from "@/hooks/useCustomAlert";
+import CustomAlert from "@/components/CustomAlert";
 
 interface Props {
   isOpen: boolean;
@@ -63,10 +65,25 @@ export const CreateAssistedOrderModal: React.FC<Props> = ({
     onClose();
   });
 
+  const { alertConfig, showSuccess, showError, closeAlert } = useCustomAlert();
+
   const handleSend = async () => {
     const res = await submitAssistedOrder();
     if (res.success) {
-      alert(`¡Pedido asistido creado con éxito! Orden #${res.orderNumber}`);
+      showSuccess({
+        title: "¡Pedido asistido creado con éxito!",
+        message: `Orden #${res.orderNumber} registrada y procesada correctamente.`,
+        confirmText: "Aceptar",
+        onConfirm: () => {
+          if (onOrderCreated) onOrderCreated();
+          onClose();
+        },
+      });
+    } else {
+      showError({
+        title: "No se pudo crear el pedido",
+        message: res.message || "Por favor verifica los productos y condiciones de la orden.",
+      });
     }
   };
 
@@ -74,11 +91,12 @@ export const CreateAssistedOrderModal: React.FC<Props> = ({
   const currentAddress = clientAddresses[selectedAddressIndex] || clientAddresses[0];
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      className="max-w-2xl p-0 flex flex-col max-h-[90vh] overflow-hidden"
-      showCloseButton={false}
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        className="max-w-2xl p-0 flex flex-col max-h-[90vh] overflow-hidden"
+        showCloseButton={false}
     >
       {/* 1. Cabecera Adaptativa Fija (Diferenciada Admin / Vendedor) */}
       <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-3 shrink-0 bg-white dark:bg-gray-900">
@@ -471,5 +489,7 @@ export const CreateAssistedOrderModal: React.FC<Props> = ({
         </div>
       </div>
     </Modal>
+    <CustomAlert {...alertConfig} onClose={closeAlert} />
+  </>
   );
 };

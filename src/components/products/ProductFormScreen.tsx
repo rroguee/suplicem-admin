@@ -7,6 +7,7 @@ import { useProductForm } from "@/hooks/useProductForm";
 import { ProductGeneralInfoCard } from "./ProductGeneralInfoCard";
 import { ProductImageUploadCard } from "./ProductImageUploadCard";
 import { LotPricingSection } from "./LotPricingSection";
+import CustomAlert from "@/components/CustomAlert";
 
 interface Props {
   productId?: string | null;
@@ -32,6 +33,8 @@ export const ProductFormScreen: React.FC<Props> = ({ productId = null }) => {
     loading,
     handleSave,
     cancel,
+    alertConfig,
+    closeAlert,
   } = useProductForm(productId);
 
   const numericBasePrice = parseFormattedNumber(price);
@@ -104,6 +107,8 @@ export const ProductFormScreen: React.FC<Props> = ({ productId = null }) => {
           />
         </div>
       </div>
+
+      <CustomAlert {...alertConfig} onClose={closeAlert} />
     </div>
   );
 };

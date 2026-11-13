@@ -17,6 +17,7 @@ import Label from '@/components/form/Label';
 import Input from '@/components/form/input/InputField';
 import { useModal } from '@/hooks/useModal';
 import CustomAlert from '../CustomAlert';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import {
   getBankAccounts,
   createBankAccount,
@@ -25,15 +26,6 @@ import {
   BankAccount,
   CreateBankAccountPayload,
 } from '@/services/bankAccountsService';
-
-interface AlertConfig {
-  isOpen: boolean;
-  type: 'success' | 'error' | 'confirm' | 'info';
-  title: string;
-  message: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}
 
 const ITEMS_PER_PAGE = 5;
 
@@ -65,21 +57,7 @@ const BankAccountListTable = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const { isOpen, openModal, closeModal } = useModal();
-
-  const [alertConfig, setAlertConfig] = useState<AlertConfig>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
-  const showAlert = (config: Omit<AlertConfig, 'isOpen'>) => {
-    setAlertConfig({ ...config, isOpen: true });
-  };
-
-  const closeAlert = () => {
-    setAlertConfig((prev) => ({ ...prev, isOpen: false }));
-  };
+  const { alertConfig, showAlert, closeAlert } = useCustomAlert();
 
   const totalPages = Math.ceil(accounts.length / ITEMS_PER_PAGE);
   const paginatedAccounts = accounts.slice(

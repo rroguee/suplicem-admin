@@ -6,6 +6,8 @@ import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { User } from "@/services/usersService";
+import CustomAlert from "@/components/CustomAlert";
+import { useCustomAlert } from "@/hooks/useCustomAlert";
 
 interface Props {
   clients: User[];
@@ -17,6 +19,7 @@ export const SellerClientsTable: React.FC<Props> = ({ clients, allSellers, onRea
   const [selectedClient, setSelectedClient] = useState<User | null>(null);
   const [targetSellerId, setTargetSellerId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { alertConfig, showError, closeAlert } = useCustomAlert();
 
   const openModal = (client: User) => {
     setSelectedClient(client);
@@ -36,7 +39,10 @@ export const SellerClientsTable: React.FC<Props> = ({ clients, allSellers, onRea
     if (result.success) {
       closeModal();
     } else {
-      alert(result.message || "Error al reasignar cartera.");
+      showError({
+        title: "Error de Reasignación",
+        message: result.message || "Error al reasignar cartera.",
+      });
     }
   };
 
@@ -138,6 +144,8 @@ export const SellerClientsTable: React.FC<Props> = ({ clients, allSellers, onRea
           </div>
         </div>
       </Modal>
+
+      <CustomAlert {...alertConfig} onClose={closeAlert} />
     </div>
   );
 };

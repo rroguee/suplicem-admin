@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/modal';
 import Button from '@/components/ui/button/Button';
 import { User } from '@/services/usersService';
+import CustomAlert from '@/components/CustomAlert';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 
 export interface PlannedTripItem {
   totalTons: number;
@@ -30,6 +32,7 @@ export const OrderTripPlannerModal: React.FC<OrderTripPlannerModalProps> = ({
 }) => {
   const [tripCount, setTripCount] = useState<number>(orderTotalTons > 25 ? 2 : 1);
   const [trips, setTrips] = useState<PlannedTripItem[]>([]);
+  const { alertConfig, showError, closeAlert } = useCustomAlert();
 
   useEffect(() => {
     if (!isOpen || orderTotalTons <= 0) return;
@@ -79,11 +82,17 @@ export const OrderTripPlannerModal: React.FC<OrderTripPlannerModalProps> = ({
 
   const handleSubmit = () => {
     if (trips.some((t) => t.totalTons <= 0)) {
-      alert('Todos los viajes deben tener un tonelaje mayor a 0.');
+      showError({
+        title: "Tonelaje Inválido",
+        message: "Todos los viajes deben tener un tonelaje mayor a 0.",
+      });
       return;
     }
     if (isDiffSignificant) {
-      alert(`La suma (${sumTons.toFixed(2)} t) no coincide con el total de la orden (${orderTotalTons.toFixed(2)} t).`);
+      showError({
+        title: "Tonelaje Descuadrado",
+        message: `La suma (${sumTons.toFixed(2)} t) no coincide con el total de la orden (${orderTotalTons.toFixed(2)} t).`,
+      });
       return;
     }
     onConfirmPlan(trips);
@@ -92,7 +101,8 @@ export const OrderTripPlannerModal: React.FC<OrderTripPlannerModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-h-[85vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4 border-b pb-3 dark:border-gray-700">
           <div>
@@ -180,5 +190,7 @@ export const OrderTripPlannerModal: React.FC<OrderTripPlannerModalProps> = ({
         </div>
       </div>
     </Modal>
+    <CustomAlert {...alertConfig} onClose={closeAlert} />
+  </>
   );
 };

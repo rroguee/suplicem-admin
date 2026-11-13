@@ -3,15 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUsers, activeOrInactiveUser, User } from '@/services/usersService';
 import { UserRoleFilter, UserStatusFilter } from '@/components/tables/users/UserFilterChips';
-
-export interface AlertConfig {
-  isOpen: boolean;
-  type: 'success' | 'error' | 'confirm' | 'info';
-  title: string;
-  message: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+export type { AlertConfig } from '@/components/CustomAlert';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -48,20 +41,7 @@ export function useUserManagement() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Alertas
-  const [alertConfig, setAlertConfig] = useState<AlertConfig>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
-  const showAlert = (config: Omit<AlertConfig, 'isOpen'>) => {
-    setAlertConfig({ ...config, isOpen: true });
-  };
-
-  const closeAlert = () => {
-    setAlertConfig((prev) => ({ ...prev, isOpen: false }));
-  };
+  const { alertConfig, showAlert, closeAlert } = useCustomAlert();
 
   useEffect(() => {
     const timer = setTimeout(() => {

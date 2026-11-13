@@ -11,17 +11,8 @@ import { useRouter } from "next/navigation";
 import { login, getCurrentUser } from "@/services/authService";
 import { AuthContext } from "@/context/authContext"; // Importado AuthContext
 import CustomAlert from "@/components/CustomAlert"; // Importado CustomAlert
+import { useCustomAlert } from "@/hooks/useCustomAlert";
 import { saveAuthSession } from "@/utils/authStorage";
-
-// Interfaz para la configuración de la alerta personalizada
-interface AlertConfig {
-  isOpen: boolean;
-  type: 'success' | 'error' | 'confirm' | 'info';
-  title: string;
-  message: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -33,21 +24,8 @@ export default function SignInForm() {
   // Obtener la función logIn del AuthContext
   const { logIn } = useContext(AuthContext);
 
-  // Estado y funciones para CustomAlert
-  const [alertConfig, setAlertConfig] = useState<AlertConfig>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
-  const showAlert = (config: Omit<AlertConfig, 'isOpen'>) => {
-    setAlertConfig({ ...config, isOpen: true });
-  };
-
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isOpen: false }));
-  };
+  // Hook centralizado para alertas
+  const { alertConfig, showAlert, closeAlert } = useCustomAlert();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,11 +86,6 @@ export default function SignInForm() {
           saveAuthSession(newSession);
         
           logIn(authenticatedUser);
-          showAlert({
-            type: 'success',
-            title: 'Inicio de sesión exitoso',
-            message: 'Bienvenido de nuevo.',
-          });
         } else {
           showAlert({
             type: 'error',

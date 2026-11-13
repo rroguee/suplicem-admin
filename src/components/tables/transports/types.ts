@@ -78,14 +78,7 @@ export type TripFilterStatus =
   | 'completed'
   | 'canceled';
 
-export interface AlertConfig {
-  isOpen: boolean;
-  type: 'success' | 'error' | 'confirm' | 'info';
-  title: string;
-  message: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}
+export type { AlertConfig } from '@/components/CustomAlert';
 
 export const isTripFractional = (tripNumber?: string): boolean => {
   if (!tripNumber) return false;

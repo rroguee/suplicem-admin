@@ -6,6 +6,7 @@ import Button from '@/components/ui/button/Button';
 import Input from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import CustomAlert from '@/components/CustomAlert';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { Trash2 } from 'lucide-react';
 import { ApprovedOrder, AlertConfig } from '../types';
 import { getOrdersWithStatus } from '@/services/ordersService';
@@ -30,16 +31,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
   const [isOrderSelectionOpen, setIsOrderSelectionOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [alertConfig, setAlertConfig] = useState<AlertConfig>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
-  const showAlert = (config: Omit<AlertConfig, 'isOpen'>) => {
-    setAlertConfig({ ...config, isOpen: true });
-  };
+  const { alertConfig, showAlert, closeAlert } = useCustomAlert();
 
   useEffect(() => {
     if (isOpen) {
@@ -221,7 +213,7 @@ export const CreateTripModal: React.FC<CreateTripModalProps> = ({
         message={alertConfig.message}
         onConfirm={alertConfig.onConfirm}
         onCancel={alertConfig.onCancel}
-        onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
+        onClose={closeAlert}
       />
     </>
   );

@@ -4,15 +4,10 @@ import { useState, useEffect, useCallback, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/context/authContext';
 import { getUsers, activeOrInactiveUser, User } from '@/services/usersService';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { AlertConfig } from '@/components/CustomAlert';
 
-export interface AlertState {
-  isOpen: boolean;
-  type: 'success' | 'error' | 'confirm' | 'info';
-  title: string;
-  message: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}
+export type AlertState = AlertConfig;
 
 export type VerificationTab = 'pending' | 'ai_alerts';
 
@@ -33,20 +28,7 @@ export function useUserVerifications() {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const [alertConfig, setAlertConfig] = useState<AlertState>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
-  const showAlert = (config: Omit<AlertState, 'isOpen'>) => {
-    setAlertConfig({ ...config, isOpen: true });
-  };
-
-  const closeAlert = () => {
-    setAlertConfig((prev) => ({ ...prev, isOpen: false }));
-  };
+  const { alertConfig, showAlert, closeAlert } = useCustomAlert();
 
   const fetchRequests = useCallback(async () => {
     if (user?.userType === 'seller') return;

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ServiceOrder, EditableDelivery, AlertConfig } from '../types';
 import { FilterStatus } from '../../logistics/OrderFilterChips';
 import { TripItem } from '../../logistics/OrderTripsProgressCard';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { User, getUsers } from '@/services/usersService';
 import {
   getOrders,
@@ -83,20 +84,7 @@ export function useOrdersList() {
     saveToProfile: true,
   });
 
-  const [alertConfig, setAlertConfig] = useState<AlertConfig>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
-  const showAlert = (config: Omit<AlertConfig, 'isOpen'>) => {
-    setAlertConfig({ ...config, isOpen: true });
-  };
-
-  const closeAlert = () => {
-    setAlertConfig((prev) => ({ ...prev, isOpen: false }));
-  };
+  const { alertConfig, showAlert, closeAlert } = useCustomAlert();
 
   useEffect(() => {
     const timer = setTimeout(() => {

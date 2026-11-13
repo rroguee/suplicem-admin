@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getProductById, createProduct, updateProduct } from "@/services/prodcutsService";
 import { parseFormattedNumber, formatNumberInput } from "@/utils/productLotUtils";
+import { useCustomAlert } from "@/hooks/useCustomAlert";
 
 export const useProductForm = (productId: string | null) => {
   const router = useRouter();
   const isEditing = Boolean(productId);
+  const { alertConfig, showError, closeAlert } = useCustomAlert();
 
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("fundas");
@@ -48,7 +50,10 @@ export const useProductForm = (productId: string | null) => {
   const handleSave = async () => {
     const numPrice = parseFormattedNumber(price);
     if (!name.trim() || numPrice <= 0) {
-      alert("Por favor ingresa un nombre y precio base válidos.");
+      showError({
+        title: "Datos Incompletos",
+        message: "Por favor ingresa un nombre y precio base válidos.",
+      });
       return;
     }
 
@@ -71,7 +76,10 @@ export const useProductForm = (productId: string | null) => {
       }
       router.push("/admin/products");
     } catch (e: any) {
-      alert("Error al guardar: " + (e.message || "Error desconocido"));
+      showError({
+        title: "Error al Guardar",
+        message: "Error al guardar: " + (e.message || "Error desconocido"),
+      });
     } finally {
       setLoading(false);
     }
@@ -96,5 +104,7 @@ export const useProductForm = (productId: string | null) => {
     loading,
     handleSave,
     cancel: () => router.push("/admin/products"),
+    alertConfig,
+    closeAlert,
   };
 };
