@@ -127,7 +127,7 @@ export function useOrdersList() {
   const fetchOrderTrackingData = useCallback(async (orderId: string) => {
     try {
       const res = await getOrderTracking(orderId);
-      if (res?.success) setOrderTracking(res);
+      if (res?.success) setOrderTracking(res.tracking || res);
     } catch (err) {
       console.error('Error fetching order tracking:', err);
     }
@@ -227,6 +227,7 @@ export function useOrdersList() {
   const closeDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedOrder(null);
+    setOrderTracking(null);
   };
 
   const handleConfirmPlan = async (plannedTrips: any[]) => {
