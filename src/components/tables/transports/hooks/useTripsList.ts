@@ -118,6 +118,29 @@ export function useTripsList() {
     }
   };
 
+  // Polling en tiempo real para ubicación del chofer mientras el modal de viaje esté abierto
+  useEffect(() => {
+    if (!isDetailModalOpen || !selectedTripDetail?.assignedDriverId) return;
+
+    const terminalStatuses = ['delivered', 'completed', 'canceled'];
+    if (selectedTripDetail.status && terminalStatuses.includes(selectedTripDetail.status)) return;
+
+    const driverId = selectedTripDetail.assignedDriverId;
+    const intervalId = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        getDriverLocation(driverId)
+          .then((locRes) => {
+            if (locRes?.success && locRes.location) {
+              setDriverLocation({ lat: locRes.location.lat, lng: locRes.location.lng });
+            }
+          })
+          .catch(() => {});
+      }
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [isDetailModalOpen, selectedTripDetail?.assignedDriverId, selectedTripDetail?.status]);
+
   const closeDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedTripDetail(null);

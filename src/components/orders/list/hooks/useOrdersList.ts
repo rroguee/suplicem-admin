@@ -133,6 +133,22 @@ export function useOrdersList() {
     }
   }, []);
 
+  // Polling automático en tiempo real para la ubicación del camión mientras el modal esté abierto
+  useEffect(() => {
+    if (!isDetailModalOpen || !selectedOrder?.id) return;
+
+    const terminalStatuses = ['delivered', 'completed', 'canceled', 'rejected'];
+    if (terminalStatuses.includes(selectedOrder.status)) return;
+
+    const intervalId = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchOrderTrackingData(selectedOrder.id);
+      }
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [isDetailModalOpen, selectedOrder?.id, selectedOrder?.status, fetchOrderTrackingData]);
+
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
