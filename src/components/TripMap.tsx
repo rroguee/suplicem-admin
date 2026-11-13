@@ -216,12 +216,12 @@ const TripMap: React.FC<TripMapProps> = ({
           />
         ))}
 
-        {/* Trazo Vial Estilo Uber / PedidosYa */}
-        {routeCoordinates.length > 0 && (
-          <React.Fragment key={`route-wrapper-${routeCoordinates.length}`}>
+        {/* Trazo Vial Estilo Uber / PedidosYa con eliminación dinámica del tramo recorrido */}
+        {routeCoordinates.length > 1 && (
+          <React.Fragment key={`route-wrapper-${routeCoordinates[0].lat}-${routeCoordinates[0].lng}`}>
             {/* Capa 1: Sombra / Borde exterior para contraste nítido */}
             <Polyline
-              key={`polyline-shadow-${routeCoordinates.length}`}
+              key={`polyline-shadow-${routeCoordinates[0].lat}-${routeCoordinates[0].lng}`}
               path={routeCoordinates}
               options={{
                 strokeColor: '#1E3A8A',
@@ -231,7 +231,7 @@ const TripMap: React.FC<TripMapProps> = ({
             />
             {/* Capa 2: Línea central activa de alta visibilidad */}
             <Polyline
-              key={`polyline-main-${routeCoordinates.length}`}
+              key={`polyline-main-${routeCoordinates[0].lat}-${routeCoordinates[0].lng}`}
               path={routeCoordinates}
               options={{
                 strokeColor: '#2563EB',

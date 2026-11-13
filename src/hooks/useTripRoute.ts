@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, RefObject } from 'react';
+import { useState, useEffect, useMemo, useRef, RefObject } from 'react';
 import protectedApi from '@/services/protectedApi';
 
 export interface RouteCoordinates {
@@ -17,15 +17,28 @@ interface UseTripRouteProps {
   mapRef: RefObject<google.maps.Map | null>;
 }
 
-export const useTripRoute = ({ originCoords, destCoords, mapRef }: UseTripRouteProps) => {
-  const [routePoints, setRoutePoints] = useState<RouteCoordinates[]>([]);
+export const useTripRoute = ({ originCoords, destCoords }: UseTripRouteProps) => {
+  const [fullRoutePoints, setFullRoutePoints] = useState<RouteCoordinates[]>([]);
   const [roadEstimate, setRoadEstimate] = useState<RoadEstimate | null>(null);
+  const lastFetchedOrigin = useRef<RouteCoordinates | null>(null);
 
   useEffect(() => {
-    if (!destCoords || !destCoords.lat || !destCoords.lng || !originCoords || !originCoords.lat || !originCoords.lng) {
-      setRoutePoints([]);
+    if (!destCoords?.lat || !destCoords?.lng || !originCoords?.lat || !originCoords?.lng) {
+      setFullRoutePoints([]);
       setRoadEstimate(null);
       return;
+    }
+
+    // Si ya tenemos una ruta y el camión no se ha desviado significativamente (>1km), no rehacer fetch
+    if (fullRoutePoints.length > 0 && lastFetchedOrigin.current) {
+      const distFromLastFetch = Math.hypot(
+        originCoords.lat - lastFetchedOrigin.current.lat,
+        originCoords.lng - lastFetchedOrigin.current.lng
+      );
+      // ~0.01 grados equivale aprox a 1 km
+      if (distFromLastFetch < 0.01) {
+        return;
+      }
     }
 
     let isMounted = true;
@@ -47,12 +60,13 @@ export const useTripRoute = ({ originCoords, destCoords, mapRef }: UseTripRouteP
               lat: p.latitude,
               lng: p.longitude,
             }));
-            setRoutePoints(mappedPoints);
+            setFullRoutePoints(mappedPoints);
             setRoadEstimate({ formattedDuration, formattedDistance });
+            lastFetchedOrigin.current = { lat: originCoords.lat, lng: originCoords.lng };
           }
         }
       } catch (error) {
-        console.warn('[useTripRoute] Fallback a trazado directo:', error);
+        console.warn('[useTripRoute] Fallback:', error);
       }
     };
 
@@ -61,12 +75,29 @@ export const useTripRoute = ({ originCoords, destCoords, mapRef }: UseTripRouteP
     return () => {
       isMounted = false;
     };
-  }, [originCoords.lat, originCoords.lng, destCoords?.lat, destCoords?.lng, mapRef]);
+  }, [originCoords.lat, originCoords.lng, destCoords?.lat, destCoords?.lng, fullRoutePoints.length]);
 
+  // Recorte dinámico instantáneo: la línea va desapareciendo a la par del avance del camión
   const routeCoordinates = useMemo(() => {
-    // Retornar únicamente los puntos de la ruta vial por calles una vez calculada
-    return routePoints;
-  }, [routePoints]);
+    if (fullRoutePoints.length === 0) return [];
+    if (!originCoords?.lat || !originCoords?.lng) return fullRoutePoints;
+
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < fullRoutePoints.length; i++) {
+      const pt = fullRoutePoints[i];
+      const dist = Math.hypot(pt.lat - originCoords.lat, pt.lng - originCoords.lng);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestIndex = i;
+      }
+    }
+
+    // Omitir los puntos ya transitados y arrancar la línea visible desde la posición actual del camión
+    const remainingRoad = fullRoutePoints.slice(closestIndex);
+    return [{ lat: originCoords.lat, lng: originCoords.lng }, ...remainingRoad];
+  }, [fullRoutePoints, originCoords.lat, originCoords.lng]);
 
   return { routeCoordinates, roadEstimate };
 };
