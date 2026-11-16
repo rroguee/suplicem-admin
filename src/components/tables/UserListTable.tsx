@@ -5,8 +5,16 @@ import { AuthContext } from '@/context/authContext';
 import { useModal } from '@/hooks/useModal';
 import Pagination from './Pagination';
 import CustomAlert from '../CustomAlert';
-import { CreateUserModal } from '../modals/CreateUserModal';
-import { UserDetailModal } from '../modals/UserDetailModal';
+import dynamic from 'next/dynamic';
+
+const CreateUserModal = dynamic(
+  () => import('../modals/CreateUserModal').then((mod) => mod.CreateUserModal),
+  { ssr: false }
+);
+const UserDetailModal = dynamic(
+  () => import('../modals/UserDetailModal').then((mod) => mod.UserDetailModal),
+  { ssr: false }
+);
 import { UserListHeader } from './users/UserListHeader';
 import { UserTableRow } from './users/UserTableRow';
 import { UserFilterChips } from './users/UserFilterChips';
@@ -176,42 +184,46 @@ const UserListTable: React.FC = () => {
         )}
       </div>
 
-      {/* Modales */}
-      <CreateUserModal
-        isOpen={isOpen}
-        onClose={closeModal}
-        onSuccess={() => {
-          fetchUsers();
-          showAlert({
-            type: 'success',
-            title: 'Éxito',
-            message: isSeller
-              ? 'Cliente registrado y vinculado a tu cartera con éxito.'
-              : 'Usuario guardado con éxito.',
-          });
-        }}
-      />
+      {/* Modales cargados estrictamente bajo demanda al abrirse */}
+      {isOpen && (
+        <CreateUserModal
+          isOpen={isOpen}
+          onClose={closeModal}
+          onSuccess={() => {
+            fetchUsers();
+            showAlert({
+              type: 'success',
+              title: 'Éxito',
+              message: isSeller
+                ? 'Cliente registrado y vinculado a tu cartera con éxito.'
+                : 'Usuario guardado con éxito.',
+            });
+          }}
+        />
+      )}
 
-      <UserDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={handleCloseDetail}
-        user={selectedUser}
-        onStatusChange={isSeller ? undefined : handleStatusChange}
-        sellers={activeSellers}
-        onSellerAssigned={
-          isSeller
-            ? undefined
-            : () => {
-                handleCloseDetail();
-                fetchUsers();
-                showAlert({
-                  type: 'success',
-                  title: 'Cartera actualizada',
-                  message: 'El vendedor asignado al cliente fue actualizado correctamente.',
-                });
-              }
-        }
-      />
+      {isDetailModalOpen && (
+        <UserDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetail}
+          user={selectedUser}
+          onStatusChange={isSeller ? undefined : handleStatusChange}
+          sellers={activeSellers}
+          onSellerAssigned={
+            isSeller
+              ? undefined
+              : () => {
+                  handleCloseDetail();
+                  fetchUsers();
+                  showAlert({
+                    type: 'success',
+                    title: 'Cartera actualizada',
+                    message: 'El vendedor asignado al cliente fue actualizado correctamente.',
+                  });
+                }
+          }
+        />
+      )}
 
       <CustomAlert
         isOpen={alertConfig.isOpen}

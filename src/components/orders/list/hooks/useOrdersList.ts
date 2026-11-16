@@ -167,11 +167,16 @@ export function useOrdersList() {
     const terminalStatuses = ['delivered', 'completed', 'canceled', 'rejected'];
     if (terminalStatuses.includes(selectedOrder.status)) return;
 
+    let isTrackingInFlight = false;
     const intervalId = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        fetchOrderTrackingData(selectedOrder.id);
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && !isTrackingInFlight) {
+        isTrackingInFlight = true;
+        Promise.resolve(fetchOrderTrackingData(selectedOrder.id))
+          .finally(() => {
+            isTrackingInFlight = false;
+          });
       }
-    }, 5000);
+    }, 15_000);
 
     return () => clearInterval(intervalId);
   }, [isDetailModalOpen, selectedOrder?.id, selectedOrder?.status, fetchOrderTrackingData]);

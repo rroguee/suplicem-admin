@@ -6,8 +6,16 @@ import { useTripsList } from './hooks/useTripsList';
 import { TripListHeader } from './TripListHeader';
 import { TripFilterBar } from './TripFilterBar';
 import { TripTable } from './TripTable';
-import { CreateTripModal } from './modals/CreateTripModal';
-import { TripDetailModal } from './modals/TripDetailModal';
+import dynamic from 'next/dynamic';
+
+const CreateTripModal = dynamic(
+  () => import('./modals/CreateTripModal').then((mod) => mod.CreateTripModal),
+  { ssr: false }
+);
+const TripDetailModal = dynamic(
+  () => import('./modals/TripDetailModal').then((mod) => mod.TripDetailModal),
+  { ssr: false }
+);
 
 export default function TripsListContainer() {
   const { user: authUser } = useContext(AuthContext);
@@ -56,21 +64,25 @@ export default function TripsListContainer() {
         onViewDetail={list.handleViewTripDetail}
       />
 
-      {/* Modales Desacoplados */}
-      <CreateTripModal
-        isOpen={list.isCreateTripModalOpen}
-        onClose={() => list.setIsCreateTripModalOpen(false)}
-        onSuccess={list.fetchTrips}
-      />
+      {/* Modales Desacoplados cargados estrictamente bajo demanda */}
+      {list.isCreateTripModalOpen && (
+        <CreateTripModal
+          isOpen={list.isCreateTripModalOpen}
+          onClose={() => list.setIsCreateTripModalOpen(false)}
+          onSuccess={list.fetchTrips}
+        />
+      )}
 
-      <TripDetailModal
-        isOpen={list.isDetailModalOpen}
-        onClose={list.closeDetailModal}
-        trip={list.selectedTripDetail}
-        driverLocation={list.driverLocation}
-        loading={list.detailLoading}
-        error={list.detailError}
-      />
+      {list.isDetailModalOpen && (
+        <TripDetailModal
+          isOpen={list.isDetailModalOpen}
+          onClose={list.closeDetailModal}
+          trip={list.selectedTripDetail}
+          driverLocation={list.driverLocation}
+          loading={list.detailLoading}
+          error={list.detailError}
+        />
+      )}
     </div>
   );
 }

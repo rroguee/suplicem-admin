@@ -126,17 +126,23 @@ export function useTripsList() {
     if (selectedTripDetail.status && terminalStatuses.includes(selectedTripDetail.status)) return;
 
     const driverId = selectedTripDetail.assignedDriverId;
+    let isFetchingLocation = false;
+
     const intervalId = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && !isFetchingLocation) {
+        isFetchingLocation = true;
         getDriverLocation(driverId)
           .then((locRes) => {
             if (locRes?.success && locRes.location) {
               setDriverLocation({ lat: locRes.location.lat, lng: locRes.location.lng });
             }
           })
-          .catch(() => {});
+          .catch(() => {})
+          .finally(() => {
+            isFetchingLocation = false;
+          });
       }
-    }, 5000);
+    }, 15_000);
 
     return () => clearInterval(intervalId);
   }, [isDetailModalOpen, selectedTripDetail?.assignedDriverId, selectedTripDetail?.status]);
