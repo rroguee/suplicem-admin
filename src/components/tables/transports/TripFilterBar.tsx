@@ -88,7 +88,7 @@ export const TripFilterBar: React.FC<TripFilterBarProps> = ({
                 isActive
                   ? isFractional
                     ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
-                    : 'bg-gray-900 text-white border-gray-900 shadow-xs dark:bg-white dark:text-gray-900 dark:border-white'
+                    : 'bg-orange-500 text-white border-orange-500 shadow-xs'
                   : isFractional
                   ? 'bg-purple-50/60 text-purple-700 border-purple-200 hover:bg-purple-100/60 dark:bg-purple-950/20 dark:border-purple-900/60 dark:text-purple-300'
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/60'
@@ -98,7 +98,7 @@ export const TripFilterBar: React.FC<TripFilterBarProps> = ({
               <span
                 className={`px-1.5 py-0.2 rounded-full text-[10px] tabular-nums ${
                   isActive
-                    ? 'bg-white/20 text-white dark:bg-black/10 dark:text-gray-900'
+                    ? 'bg-white/30 text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                 }`}
               >
