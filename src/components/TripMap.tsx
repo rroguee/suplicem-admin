@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { GoogleMap, Marker, InfoWindow, Polyline, useLoadScript } from '@react-google-maps/api';
 import { calculateTripEstimate, WAREHOUSE_LOCATION } from '@/utils/tripEstimate';
 import { useTripRoute } from '@/hooks/useTripRoute';
+import { useTripTrackingSocket } from '@/hooks/useTripTrackingSocket';
 
 const defaultContainerStyle = {
   width: '100%',
@@ -28,6 +29,7 @@ interface DeliveryAddress {
 }
 
 interface TripMapProps {
+  tripId?: string;
   driverLocation?: { lat: number; lng: number } | null;
   deliveries?: {
     address: DeliveryAddress;
@@ -41,6 +43,7 @@ interface TripMapProps {
 }
 
 const TripMap: React.FC<TripMapProps> = ({
+  tripId,
   driverLocation,
   deliveries = [],
   driverInfo,
@@ -50,6 +53,13 @@ const TripMap: React.FC<TripMapProps> = ({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
   });
+
+  const { currentLocation, isLive } = useTripTrackingSocket({
+    tripId,
+    initialLocation: driverLocation,
+  });
+
+  const effectiveLocation = currentLocation || driverLocation;
 
   const [driverInfoWindowOpen, setDriverInfoWindowOpen] = useState(false);
   const [deliveryInfoWindow, setDeliveryInfoWindow] = useState<DeliveryDetails | null>(null);
@@ -61,9 +71,9 @@ const TripMap: React.FC<TripMapProps> = ({
   ) || [];
 
   const firstValidDelivery = validDeliveries[0];
-  const hasAnyPoints = Boolean(driverLocation || validDeliveries.length > 0);
+  const hasAnyPoints = Boolean(effectiveLocation || validDeliveries.length > 0);
 
-  const originCoords = driverLocation || WAREHOUSE_LOCATION;
+  const originCoords = effectiveLocation || WAREHOUSE_LOCATION;
   const [initialCenter] = useState(originCoords);
   const destCoords = firstValidDelivery
     ? {
@@ -140,7 +150,18 @@ const TripMap: React.FC<TripMapProps> = ({
           <div>
             <span className="font-bold text-blue-900 dark:text-blue-300">🏢 Partida:</span>{' '}
             <span className="text-gray-700 dark:text-gray-300">
-              {driverLocation ? 'Camión en camino' : WAREHOUSE_LOCATION.name}
+              {effectiveLocation ? (
+                <>
+                  Camión en camino{' '}
+                  {isLive && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 ml-1">
+                      🟢 En Vivo
+                    </span>
+                  )}
+                </>
+              ) : (
+                WAREHOUSE_LOCATION.name
+              )}
             </span>
             <span className="mx-2 hidden sm:inline">•</span>
             <span className="font-bold text-blue-900 dark:text-blue-300">📍 Llegada:</span>{' '}
@@ -165,9 +186,9 @@ const TripMap: React.FC<TripMapProps> = ({
         }}
       >
         {/* Marcador de Partida / Conductor o Almacén */}
-        {driverLocation ? (
+        {effectiveLocation ? (
           <Marker
-            position={driverLocation}
+            position={effectiveLocation}
             onClick={() => setDriverInfoWindowOpen(true)}
             icon={{
               url: '/images/grid-image/camion.png',
@@ -182,9 +203,9 @@ const TripMap: React.FC<TripMapProps> = ({
         )}
 
         {/* InfoWindow del Conductor */}
-        {driverInfoWindowOpen && driverLocation && (
+        {driverInfoWindowOpen && effectiveLocation && (
           <InfoWindow
-            position={driverLocation}
+            position={effectiveLocation}
             onCloseClick={() => setDriverInfoWindowOpen(false)}
           >
             <div className="p-2 max-w-xs">

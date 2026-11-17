@@ -240,6 +240,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Ubicación de Despacho</h3>
               <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                 <TripMap
+                  tripId={trackingInfo?.trip?.id || trackingInfo?.tripId}
                   driverLocation={currentDriverLoc}
                   driverInfo={trackingInfo?.driver}
                   deliveries={selectedOrder.deliveries?.map((d) => ({

@@ -163,6 +163,7 @@ export const TripDetailModal: React.FC<TripDetailModalProps> = ({
             </h4>
             <div className="h-64 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
               <TripMap
+                tripId={trip.id}
                 driverLocation={driverLocation}
                 driverInfo={trip.driver}
                 deliveries={trip.orders?.flatMap((o) =>

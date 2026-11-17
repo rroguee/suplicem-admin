@@ -142,7 +142,7 @@ export function useTripsList() {
             isFetchingLocation = false;
           });
       }
-    }, 15_000);
+    }, 45_000);
 
     return () => clearInterval(intervalId);
   }, [isDetailModalOpen, selectedTripDetail?.assignedDriverId, selectedTripDetail?.status]);
