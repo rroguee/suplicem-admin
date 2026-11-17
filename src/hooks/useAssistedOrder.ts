@@ -181,9 +181,11 @@ export function useAssistedOrder(
         : `Ref Transferencia: ${transferReference.trim()}`;
     }
 
+    const isSeller = user?.userType === "seller";
     const payload: CreateOrderPayload = {
       userId: selectedClient.uid,
-      createdBySellerId: user?.uid,
+      createdBySellerId: isSeller ? user?.uid : undefined,
+      createdByAdminId: !isSeller ? user?.uid : undefined,
       deliveryType,
       deliveryAddress: deliveryType === "domicilio" ? finalAddress : undefined,
       deliveries:

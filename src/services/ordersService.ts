@@ -47,6 +47,7 @@ export const getOrders = async (params?: OrdersQueryParams) => {
 export interface CreateOrderPayload {
   userId: string;
   createdBySellerId?: string;
+  createdByAdminId?: string;
   deliveryType: "domicilio" | "almacen";
   deliveryAddress?: {
     description: string;
