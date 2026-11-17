@@ -42,7 +42,9 @@ export function useTripTrackingSocket({ tripId, initialLocation }: UseTripTracki
         setIsLive(true);
         if (data.heading !== undefined) setHeading(data.heading);
 
-        const target = { lat: data.lat, lng: data.lng };
+        const targetLat = (data as any).lat ?? (data as any).latitude;
+        const targetLng = (data as any).lng ?? (data as any).longitude;
+        const target = { lat: targetLat, lng: targetLng };
         if (!currentPosRef.current) {
           currentPosRef.current = target;
           setCurrentLocation(target);
