@@ -59,8 +59,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   const cleanPhone = (user.phone || '').replace(/[^0-9]/g, '');
   const whatsappUrl = cleanPhone.length >= 10 ? `https://wa.me/${cleanPhone}` : null;
 
-  const driverCode =
-    user.driverCode || (user.uid ? `COND-${user.uid.slice(0, 5).toUpperCase()}` : 'COND-XXXX');
+  const driverCode = user.driverCode || 'Pendiente de aprobación';
   const sellerCode =
     user.sellerCode || (user.uid ? `VEND-${user.uid.slice(0, 5).toUpperCase()}` : 'VEND-XXXX');
 

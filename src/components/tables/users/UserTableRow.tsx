@@ -135,7 +135,7 @@ export const UserTableRow: React.FC<Props> = ({
 
           {user.userType === 'driver' && (
             <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100/60 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 tabular-nums">
-              ID: {user.driverCode || (user.uid ? `COND-${user.uid.slice(0, 5).toUpperCase()}` : 'COND-XXXX')}
+              ID: {user.driverCode || 'Pendiente'}
             </span>
           )}
         </div>
