@@ -43,6 +43,11 @@ export const OrderApprovalVerificationCard: React.FC<Props> = ({
           <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">
             {order.paymentMethod === "credit" ? "Pago a Crédito" : "Transferencia Bancaria"}
           </p>
+          {order.bankReferenceNumber && (
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mt-1">
+              Ref. Bancaria: <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{order.bankReferenceNumber}</span>
+            </p>
+          )}
         </div>
 
         {hasReceipt && onViewReceipt && (
