@@ -1,11 +1,19 @@
-import { redirect } from "next/navigation";
+import OrderListTable from "@/components/tables/OrderListTable";
+import { Metadata } from "next";
+import React, { Suspense } from "react";
 
-interface Props {
-  searchParams: Promise<{ search?: string }>;
-}
+export const metadata: Metadata = {
+  title: "Gestión de Órdenes | Suplicem Admin",
+  description:
+    "Panel de gestión, aprobación y logística de órdenes de compra Suplicem.",
+};
 
-export default async function OrdersRedirectPage({ searchParams }: Props) {
-  const params = await searchParams;
-  const query = params.search ? `?search=${encodeURIComponent(params.search)}` : "";
-  redirect(`/admin/basic-tables${query}`);
+export default function OrdersPage() {
+  return (
+    <div className="space-y-4">
+      <Suspense fallback={null}>
+        <OrderListTable />
+      </Suspense>
+    </div>
+  );
 }

@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
   {
     name: "Órdenes",
     icon: <TaskIcon />,
-    subItems: [{ name: "Gestión de Ódenes", path: "/admin/basic-tables", pro: false }],
+    subItems: [{ name: "Gestión de Órdenes", path: "/admin/orders", pro: false }],
   },
   {
     name: "Productos",
